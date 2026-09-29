@@ -1,431 +1,133 @@
-# AI Hardware Agent Examples 最佳实践
+# Unified AI App
 
-本文档基于华为 AI Hardware Agent SDK，指导开发者完成各平台的编译、烧录与运行。
+从立创实战派和利尔达 ESP32-S3 示例提取的最小 AI 语音对话应用。两块板使用同一套应用、云接入、媒体处理和界面，通过构建时选择板级适配。原示例未修改。
 
----
+固定使用 **ConvAI SDK 26.8.0**，随工程保留发布包、头文件及 ESP32-S3 / WS63 / Windows 静态库。来源与校验值见 [third_party/README.md](third_party/README.md)。
 
-## 目录
+代码上库范围、排除项和逐文件用途见 [REPOSITORY_GUIDE.md](REPOSITORY_GUIDE.md)。
 
-1. [概述](#概述)
-2. [前置环境准备](#前置环境准备)
-3. [SDK 与 Examples 获取](#sdk-与-examples-获取)
-4. [工程集成](#工程集成)
-5. [设备凭证配置](#设备凭证配置)
-6. [平台编译指南](#平台编译指南)
-   - [WS63 平台](#ws63-平台)
-   - [模拟器（WIN）平台](#模拟器win平台)
-7. [开发文档](#开发文档)
+## 使用范围
 
----
+- 屏幕仅显示板卡名称、网络/配网信息、会话状态，以及 **Start/Stop**、**Wi-Fi** 两个按钮。
+- 立创板 BOOT 短按也可启停；利尔达板使用触摸按钮。
+- 开始后连续采集，保留原有 8 kHz、双声道平面排列的 G711A 上行，以及云端打断事件处理。没有增加本地唤醒/AEC 算法。
+- 断线后结束当前会话，网络恢复后由用户重新点击 Start。最小实现不自动重开对话。
+- 字体使用 LVGL 内置英文字体，删除 Node.js、npm、Windows 字体文件和运行时生成字库的依赖。
+- 移除音色选择、音量设置页、聊天记录、浮球、波形/动画、滑动手势、触摸诊断点、旧 LCD UI、面板工厂、功能调用控制和高频诊断日志。音量通过构建配置设置，Agent 的音色/角色使用云端配置。
+- Wi-Fi 配网网页沿用已有组件；不包含 OTA、应用商店或动态应用运行时。
 
-## 概述
+## 分层
 
-AI Hardware Agent SDK 采用 **SDK 与 Examples 分离发布** 的模式：
-
-| 组件                            | 说明                                         | 发布形式                                     |
-| ------------------------------- | -------------------------------------------- | -------------------------------------------- |
-| **AI Hardware Agent SDK** | 核心库（含`libconvai_sdk.a` + 公共头文件） | `ai-hardware-agent-sdk-<version>.tar`      |
-| **Examples**              | 平台示例代码（含 GoldieOS demo 应用）        | `ai-hardware-agent-examples-<version>.tar` |
-
-SDK 的 `include/` 和 `libs/` 放在工程根目录，供各平台共用。
-
-最终集成后的目录结构：
-
-```
-ai-hardware-agent-project/
-├── include/convai/                         # SDK 公共头文件（来自 SDK 包）
-│   ├── convai_api.h
-│   ├── convai_event.h
-│   ├── convai_platform.h
-│   └── convai_types.h
-├── libs/                                    # SDK 预编译库（来自 SDK 包）
-│   ├── ws63/
-│   │   └── libconvai_sdk.a                  # WS63 平台
-│   └── win/
-│       └── libconvai_sdk.a                  # WIN 模拟器平台（需单独获取）
-├── CMakeLists.txt                          # 顶层构建脚本（来自 Examples 包）
-├── examples/
-│   └── goldieos/
-│       ├── CMakeLists.txt
-│       ├── sdk_integration/                # SDK 集成桥接层
-│       │   ├── convai_bridge.c/h
-│       │   ├── convai_bridge_defaults.c/h
-│       │   ├── convai_config_file.c/h
-│       │   ├── convai_codec_g711a.c/h
-│       │   ├── convai_audio_uplink.c
-│       │   ├── convai_audio_downlink.c
-│       │   ├── convai_audio_dump.c/h
-│       │   └── convai_audio_internal.h
-│       ├── apps/                           # 应用层
-│       ├── services/                       # 系统服务
-│       ├── drivers/                        # 硬件驱动
-│       ├── platform/ws63/                  # WS63 平台适配
-│       ├── platform/convai_platform_ws63.c # AI Hardware Agent HAL 实现 (WS63)
-│       ├── platform/convai_platform_ws63.h # AI Hardware Agent HAL 头文件 (WS63)
-│       ├── platform/convai_platform_win.c  # AI Hardware Agent HAL 实现 (WIN 模拟器)
-│       ├── platform/convai_platform_win.h  # AI Hardware Agent HAL 头文件 (WIN 模拟器)
-│       ├── include/                        # GoldieOS 内部头文件
-│       ├── libs/                           # 预编译库
-│       ├── docs/                           # 开发文档
-│       ├── third_party/                    # 第三方库（Opus, FatFs, mbedTLS, TFLite 等）
-│       ├── init/                           # 系统初始化
-│       ├── compat/                         # 兼容层
-│       └── tools/                          # 工具集
-│           ├── build/                      #   构建工具
-│           │   ├── tools/                  #     构建子工具
-│           │   │   ├── compiler/riscv/     #       交叉编译工具链
-│           │   │   └── ws63_link_v4.exe    #       固件链接器
-│           │   └── config/ws63/            #     链接脚本 & 配置文件
-│           └── burn/                       #   烧录工具
-│               └── hisi/
-│                   └── BurnTool_5.0.39/    #     BurnTool GUI
+```mermaid
+flowchart TD
+    Main[main: 组装与事件循环] --> Core[core: 对话状态机]
+    Main --> Cloud[services/cloud: ConvAI 会话适配]
+    Main --> Port[ports/esp_idf: 媒体任务、网络、配置、SDK HAL]
+    Main --> UI[ui: 最小 LVGL 页面]
+    Cloud --> SDK[ConvAI SDK 26.8.0]
+    Cloud --> MediaOps[ai_media_ops_t 接口]
+    Port --> MediaOps
+    Port --> Media[services/media: G711A、声道映射、有界缓冲]
+    Port --> Board[boards: SZPI / LRD]
+    UI --> Board
 ```
 
----
+| 目录 | 边界与复用方式 |
+|---|---|
+| `core/` | 只依赖标准 C；同一个 owner 线程处理输入、网络和云事件，输出 `ai_view_t` |
+| `services/cloud/` | 只依赖标准 C、SDK 公共头文件和媒体接口；不调用 LVGL、GPIO、FreeRTOS |
+| `services/media/` | 无 OS 依赖的采样转换和缓冲；外部提供内存、锁与工作线程 |
+| `ports/esp_idf/` | ESP-IDF 线程、同步、网络、时间、鉴权配置与 SDK HAL |
+| `boards/` | 引脚、IO 扩展器、屏幕初始化、触摸和实际录放音；音频 Codec 驱动共用 |
+| `ui/` | 仅消费状态快照、产生启停/配网命令；不依赖 ConvAI SDK |
+| `main/` | 静态组装依赖并管理应用生命周期，不实现硬件驱动 |
+| `ports/ws63/` | 可复用静态库构建入口与接入现有“设置 → AI 设置”页面的说明 |
 
-## 前置环境准备
+参考 [ESP-Brookesia](https://github.com/espressif/esp-brookesia) 的硬件适配、服务、应用与表现层分离。当前功能规模使用静态依赖注入，不引入运行时服务注册、动态插件或多语言运行时。
 
-| 工具                  | 版本要求  | 说明                           |
-| --------------------- | --------- | ------------------------------ |
-| CMake                 | ≥ 3.10   | 构建配置                       |
-| MinGW Makefiles       | —        | Windows 下使用`mingw32-make` |
-| RISC-V 交叉编译工具链 | GCC 7.3.0 | 已包含在 Examples 包中         |
+## 板级差异
 
-Windows 下推荐使用 [MSYS2](https://www.msys2.org/)。
+| 项目 | `szpi` 立创实战派 | `lrd` 利尔达 |
+|---|---|---|
+| Flash / PSRAM | 16 MB / Octal | 8 MB / Quad |
+| IO 扩展器 | PCA9557，0x19 | TPT29555A，0x22 |
+| 触摸 | FT6336，0x38 | CST836U，0x15 |
+| ES7210 地址 | 0x41 | 0x40 |
+| 上行麦克风 / 参考 | TDM slot0 / slot1 | TDM slot2 / slot1 |
+| 按键 | GPIO0 BOOT | 无物理按键依赖 |
 
-> **注意：** PowerShell 需以管理员身份运行，否则可能因权限不足导致编译或环境变量设置失败。右键点击 PowerShell 图标，选择"以管理员身份运行"。
+I2S 时序、Codec 初始化与 ST7789 寄存器序列来自对应原工程。不要仅修改板名切换硬件；Flash、PSRAM 与分区配置也必须一起切换。
 
----
+## 构建与烧录
 
-## SDK 与 Examples 获取
+使用已激活的 ESP-IDF **6.1** 环境。组件清单允许 6.0–6.1，当前验证版本为 6.1.0。首次构建需要联网获取锁定版本的 LVGL、esp_codec_dev 和 cJSON。
 
-### 下载 Examples 包
+在本目录执行，始终为两块板使用不同构建目录：
 
-从以下地址下载示例代码包：
-
-> **下载地址：** `https://github.com/uoongx/ai-hardware-agent-examples.git`
-
-可以通过 `git clone` 获取，也可以下载仓库的 `.tar.gz` 发布包后解压。
-
-Examples 包内容：
-
-```
-ai-hardware-agent-examples
-├── CMakeLists.txt               # 顶层构建脚本
-├── examples/
-│   └── goldieos/                # GoldieOS 综合示例
-│       ├── CMakeLists.txt
-│       ├── apps/                # 应用层
-│       ├── sdk_integration/     # SDK 集成桥接层
-│       ├── services/            # 系统服务
-│       ├── drivers/             # 硬件驱动
-│       ├── platform/ws63/       # WS63 平台适配
-│       ├── platform/            # AI Hardware Agent HAL 实现
-│       ├── include/             # GoldieOS 内部头文件
-│       ├── libs/                # 预编译库
-│       ├── docs/                # 开发文档
-│       ├── third_party/         # 第三方库（Opus, FatFs, mbedTLS, TFLite 等）
-│       ├── tools/               # 工具集
-│       │   ├── build/           #   构建工具（交叉编译工具链 + ws63_link_v4.exe）
-│       │   └── burn/            #   烧录工具
-│       ├── init/                # 系统初始化
-│       └── compat/              # 兼容层
+```sh
+idf.py -B build-szpi -DUNIFIED_BOARD=szpi build
+idf.py -B build-lrd -DUNIFIED_BOARD=lrd build
 ```
 
-### 下载 SDK 包
+每个构建目录独立保存 sdkconfig。工程会拒绝在一个已配置的构建目录中切换板型。
 
-从以下地址下载 AI Hardware Agent SDK 发布包：
+配置云接入参数：
 
-> **下载地址：** `https://download.huaweicloud-koophone.com/ai-hardware-agent-sdk/ai-hardware-agent-sdk.26.6.2.tar`
-
-SDK 包内容：
-
-```
-ai-hardware-agent-sdk-xx.x.x.tar
-├── include/convai/              # 公共 API 头文件
-│   ├── convai_api.h
-│   ├── convai_event.h
-│   ├── convai_platform.h
-│   └── convai_types.h
-└── libs/
-    └── ws63/
-        └── libconvai_sdk.a      # WS63 平台预编译静态库
+```sh
+idf.py -B build-szpi -DUNIFIED_BOARD=szpi menuconfig
 ```
 
----
+进入 `Unified AI application`，填写 Agent ID，以及 API key 或完整产品三元组。API key 非空时优先使用。WebSocket URL 留空使用 SDK 默认地址。利尔达板使用相同命令并替换目录和板型。
 
-## 工程集成
+也可以在**首次配置之前**复制 `config/local.defaults.example` 为 `config/local.defaults` 并填写；此文件已被忽略。已有 sdkconfig 时，用 menuconfig 修改，defaults 不会覆盖已有值。
 
-### 步骤 1：创建工作目录并解压 Examples 包
-
-在 **PowerShell** 中执行：
-
-```powershell
-mkdir ai-hardware-agent-examples
-cd ai-hardware-agent-examples
-tar -xvf /path/to/ai-hardware-agent-examples.tar
+```sh
+idf.py -B build-szpi -DUNIFIED_BOARD=szpi -p COMx flash monitor
+idf.py -B build-lrd -DUNIFIED_BOARD=lrd -p COMx flash monitor
 ```
 
-解压后得到 `CMakeLists.txt`、`examples/`。
+如需替换 SDK 存放路径，增加 `-DCONVAI_SDK_ROOT=/path/to/convai-sdk-26.8.0`，该目录必须同时提供 `include/convai` 和 `libs/esp32s3/libconvai_sdk.a`。缺库直接报错，不链接占位实现。
 
-### 步骤 2：将 SDK 包解压到工程根目录
+首次启动无已保存 Wi-Fi 时，屏幕显示 `AI-Setup-…` 热点名和配网页地址。连接热点完成配网；联网并完成时间同步后点击 Start。点击 Wi-Fi 会先停止会话，再进入配网。TLS 使用自带证书包或 SDK 提供的 CA，保留服务器证书校验。
 
-SDK 的 `include/` 和 `libs/` 放在工程根目录：
+## 生命周期与线程约束
 
-```powershell
-tar -xvf /path/to/ai-hardware-agent-sdk-x.x.x.tar
+- 所有核心状态变更在 `app_main` 的事件循环串行执行。SDK 回调只发送拷贝后的事件，不在回调中 stop/join。
+- LVGL 只有 UI 任务操作。状态和网络文本经单元素快照队列传递；I2C 触摸读取在独立任务执行。
+- 显示缓冲在 SPI DMA 完成回调后才归还 LVGL。删除旧实现“入队即 flush ready”的提前复用行为。
+- 录音、播放任务启动一次。停止会话通过上行 barrier 等待发送结束，清空播放缓冲，再停止/销毁 SDK 引擎，不靠固定 sleep 猜测任务退出。
+- 每次会话使用新的 session 代号，过滤已入队的旧回调。播放 reset 使用独立 epoch，防止已经取出的旧数据在 reset 后重新写入。
+- G711A 下行缓冲默认 256 KiB，约 32 秒编码音频，使用 PSRAM；容量可配置。超过容量明确终止本次会话，避免静默截断或无限占用内存。
+- 初始预缓冲 200 ms；短回复收到 finish 后立即排空；界面在缓冲及硬件尾部播完后返回 Listening。
+- 软件 reset 后硬件 DMA 仍可能有最多约 180 ms 尾音，这是保留的 I2S DMA 配置预算，尚需实板测量。不是硬件级即时静音保证。
+- SDK 26.8.0 音频回调只提供格式，未暴露响应 ID。当前依赖 SDK 有序交付状态/音频事件；不能识别跨越新一轮 ANSWERING 才到达的旧音频包。
+
+## 测试
+
+本次执行结果及固件产物见 [VALIDATION.md](VALIDATION.md)。
+
+主机测试不依赖 ESP-IDF，也不连接云服务。需要 CMake 和本机 C11 编译器：
+
+```sh
+cmake -S tests -B build-host
+cmake --build build-host
+ctest --test-dir build-host --output-on-failure
+python tools/check_architecture.py
 ```
 
-### 步骤 3：验证集成结果
+Windows 使用 MinGW 时，可以在其环境中添加 `-G Ninja -DCMAKE_C_COMPILER=gcc`。测试覆盖会话关闭/重启、迟到事件、网络断开、连接超时与时间回绕、100 次启停、G711 向量、两种声道映射、缓冲回绕/溢出/短音频、SDK 创建失败与启动失败，以及回调中的打断和断线处理。
 
-```powershell
-# 确认 SDK 文件在根目录
-Test-Path include/convai/convai_api.h              # SDK 公共头文件
-Test-Path libs/ws63/libconvai_sdk.a                # WS63 SDK 静态库
+WS63 公共库可使用原工程的 RISC-V 工具链构建：
 
-# 确认桥接层文件完整
-Test-Path examples/goldieos/sdk_integration/convai_bridge.c
-Test-Path examples/goldieos/sdk_integration/convai_config_file.c
-Test-Path examples/goldieos/sdk_integration/convai_codec_g711a.c
-
-# 确认顶层构建脚本
-Test-Path CMakeLists.txt
+```sh
+cmake -S ports/ws63 -B build-ws63-core -G Ninja -DCMAKE_TOOLCHAIN_FILE=../ai-hardware-agent-examples/cmake/toolchains/ws63-riscv-gcc.cmake
+cmake --build build-ws63-core
 ```
 
----
+这只生成公共静态库，不生成润和板可烧录固件；完整接入说明见 [ports/ws63/README.md](ports/ws63/README.md)。
 
-## 设备凭证配置
+## 实板验收
 
-编译前，需要将设备的五元组信息配置到 `convai_bridge_defaults.c` 中。
+本次没有连接开发板，也没有使用真实云凭据发起会话。编译通过不等于完成实板验收。两块板均需检查：首次配网/重新配网、触摸坐标与按键、麦克风/参考声道、短回复和长回复、连续启停、播报中停止、云端打断、Wi-Fi 断开恢复、重新连接后是否串入旧音频，以及持续运行的内存与线程栈余量。
 
-### 准备凭证信息
-
-联系平台获取以下凭证：
-
-| 参数               | 说明               | 示例                      |
-| ------------------ | ------------------ | ------------------------- |
-| `agent_id`       | 智能体 ID          | `"goldieos-agent"`      |
-| `product_id`     | 产品 ID            | `"your_product_id"`     |
-| `product_key`    | 产品密钥           | `"your_product_key"`    |
-| `product_secret` | 产品密钥（加密用） | `"your_product_secret"` |
-| `device_name`    | 设备名称           | `"goldieos-ws63"`       |
-
-### 修改默认配置
-
-在 `examples/goldieos/sdk_integration/convai_bridge_defaults.c` 中找到默认配置宏定义，替换为实际值：
-
-```c
-/* ---- default config ---- */
-#define BRIDGE_DEFAULT_BOT_ID         "your_agent_id"       // ← 替换为实际的 agent_id
-#define BRIDGE_DEFAULT_PRODUCT_ID     "your_product_id"     // ← 替换为实际的 product_id
-#define BRIDGE_DEFAULT_PRODUCT_KEY    "your_product_key"    // ← 替换为实际的 product_key
-#define BRIDGE_DEFAULT_PRODUCT_SECRET "your_product_secret" // ← 替换为实际的 product_secret
-#define BRIDGE_DEFAULT_DEVICE_NAME    "your_device_name"    // ← 替换为实际的 device_name
-```
-
-WS63 平台在 `bridge_build_config_json()` 中直接使用这些默认值构建连接配置。
-
-> **注意：** 编译前务必确认凭证已替换为有效值，否则设备将无法连接平台服务。
-
----
-
-## 平台编译指南
-
-### WS63 平台
-
-#### 交叉编译工具链
-
-交叉编译工具链已包含在 Examples 包中，位于：
-
-```
-examples/goldieos/tools/build/tools/compiler/riscv/cc_riscv32_musl_105/cc_riscv32_musl_fp_win/bin/
-├── riscv32-linux-musl-gcc.exe      # RISC-V C 交叉编译器
-├── riscv32-linux-musl-g++.exe      # RISC-V C++ 交叉编译器
-└── ...
-```
-
-使用时将上述 `bin/` 目录加入 `PATH`：
-
-**方法一：临时设置（当前 PowerShell 窗口有效）**
-
-```powershell
-$env:PATH += ";<你的工程目录>\examples\goldieos\tools\build\tools\compiler\riscv\cc_riscv32_musl_105\cc_riscv32_musl_fp_win\bin;<你的工程目录>\examples\goldieos\tools\build\tools"
-```
-
-**方法二：永久设置（推荐）**
-
-1. 按 `Win + R`，输入 `sysdm.cpl`，回车打开"系统属性"
-2. 点击"高级"选项卡 → "环境变量"
-3. 在"系统变量"或"用户变量"中找到 `Path`，点击"编辑"
-4. 点击"新建"，分别添加以下两个路径（将 `<你的工程目录>` 替换为实际路径，如 `E:\works\ai-hardware-agent-examples`）：
-   ```
-   <你的工程目录>\examples\goldieos\tools\build\tools\compiler\riscv\cc_riscv32_musl_105\cc_riscv32_musl_fp_win\bin
-   <你的工程目录>\examples\goldieos\tools\build\tools
-   ```
-5. 一路点击"确定"保存
-6. **重启终端**使环境变量生效
-
-> **注意：** 工程目录不要嵌套太深，否则可能导致路径过长引发编译问题。建议将工程放在简洁的路径下，如 `D:\ai-hardware-agent-examples`。
-
-验证安装：
-
-```bash
-riscv32-linux-musl-gcc --version
-riscv32-linux-musl-g++ --version
-```
-
-#### 链接工具
-
-固件链接器 `ws63_link_v4.exe` 已包含在 Examples 包中，位于：
-
-```
-examples/goldieos/tools/build/tools/ws63_link_v4.exe
-```
-
-在 `examples/goldieos/CMakeLists.txt` 中已预配置好路径：
-
-```cmake
-# 优先级: CMake 参数 > 环境变量 > 相对路径回退
-if(WS63_BOARD_ROOT)
-    set(WS63_LINK_ROOT "${WS63_BOARD_ROOT}")
-elseif(DEFINED ENV{GOLDIEOS_ROOT})
-    set(WS63_LINK_ROOT "$ENV{GOLDIEOS_ROOT}")
-else()
-    set(WS63_LINK_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()
-
-set(WS63_LINKER "${WS63_LINK_ROOT}/tools/build/tools/ws63_link_v4.exe")
-```
-
-如果你的 `ws63_link_v4.exe` 不在 `examples/goldieos/tools/build/tools/` 下，可通过以下方式覆盖：
-
-```bash
-# CMake 参数
-cmake .. -DWS63_BOARD_ROOT=/path/to/your/goldieos
-```
-
-#### CMake 配置说明
-
-顶层 `CMakeLists.txt` 中，WS63 平台的 `convai_sdk` 使用 `IMPORTED STATIC` 方式链接预编译的 `libconvai_sdk.a`：
-
-```cmake
-add_library(convai_sdk STATIC IMPORTED)
-set_target_properties(convai_sdk PROPERTIES
-    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/ws63/libconvai_sdk.a
-)
-```
-
-固件链接通过 `ws63_link_v4.exe` 将应用库、Opus 库、SDK 库三者链接：
-
-```
-libgoldieos_ws63.a  ──┐
-libopus.a           ──┤── ws63_link_v4.exe ──→ goldieos.fwpkg
-libconvai_sdk.a     ──┘
-```
-
-### 编译
-
-在工程根目录下，打开 **PowerShell** 执行：
-
-```powershell
-mkdir build
-cd build
-cmake .. -G "MinGW Makefiles" -DCONVAI_PLATFORM=ws63 -DCMAKE_C_COMPILER=riscv32-linux-musl-gcc -DCMAKE_CXX_COMPILER=riscv32-linux-musl-g++ -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 -DCMAKE_MAKE_PROGRAM=mingw32-make
-mingw32-make
-```
-
-| 参数                                            | 说明                                 |
-| ----------------------------------------------- | ------------------------------------ |
-| `-G "MinGW Makefiles"`                        | 使用 MinGW Makefiles 生成器          |
-| `-DCONVAI_PLATFORM=ws63`                      | 指定目标平台为 WS63                  |
-| `-DCMAKE_C_COMPILER=riscv32-linux-musl-gcc`   | RISC-V C 交叉编译器                  |
-| `-DCMAKE_CXX_COMPILER=riscv32-linux-musl-g++` | RISC-V C++ 交叉编译器                |
-| `-DCMAKE_C_COMPILER_WORKS=1`                  | 跳过编译器可用性检测（交叉编译必需） |
-| `-DCMAKE_CXX_COMPILER_WORKS=1`                | 跳过 C++ 编译器可用性检测            |
-| `-DCMAKE_MAKE_PROGRAM=mingw32-make`           | 指定 make 程序                       |
-
-编译产物位于 `build/examples/goldieos/out/`：
-
-```
-build/examples/goldieos/out/
-├── goldieos.fwpkg     # 固件包（用于烧录）
-├── goldieos.bin       # 固件二进制文件
-└── goldieos.elf       # ELF 文件（含调试符号）
-```
-
-#### 烧录
-
-烧录使用 BurnTool，位于：
-
-```
-examples/goldieos/tools/burn/hisi/BurnTool_5.0.39/BurnTool/BurnTool.exe
-```
-
-**烧录步骤：**
-
-1. **启动 BurnTool** — 双击 `BurnTool.exe`
-2. **配置参数** — 设置波特率（推荐 `921600`）
-3. **进入 ISP 模式** — 关机状态下按住 RESET → 接上 USB → 松开 RESET → 选择 COM 口 → 点击 Connect（连接后不断打印CCC）
-4. **加载固件** — 点击"Select file"，选择 `build/examples/goldieos/out/goldieos.fwpkg`
-5. **执行烧录** — 点击"Send file"，等待完成
-6. **运行固件** — 长按开机按钮启动设备
-
-**硬件连接：** 使用 USB 转串口线连接 WS63 开发板，确认[串口驱动](https://wch.cn/downloads/CH341SER_EXE.html)已安装。
-
----
-
-### 模拟器（WIN）平台
-
-#### 前置准备
-
-1. **Windows 版 SDK 库**（必需）：将 Windows (MinGW) 版 `libconvai_sdk.a` 放入工程根目录的 `libs/win/`：
-
-   ```powershell
-   Test-Path libs/win/libconvai_sdk.a
-   ```
-
-2. **MinGW 工具链**：本机原生 `gcc/g++` 与 `mingw32-make` 可用（如 MSYS2 mingw64，**不是** ws63 的 RISC-V 交叉工具链）。
-
-#### 编译
-
-在工程根目录下，打开 **PowerShell** 执行：
-
-```powershell
-mkdir build_win
-cd build_win
-cmake .. -G "MinGW Makefiles" -DCONVAI_PLATFORM=goldieos -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 -DCMAKE_MAKE_PROGRAM=mingw32-make
-mingw32-make
-```
-
-编译产物位于 `build_win/examples/goldieos/`：
-
-```
-build_win/examples/goldieos/
-├── goldieos.exe           # 模拟器可执行文件
-├── convai.cfg             # 运行时配置（首次构建自动生成，默认全部注释）
-└── convai.cfg.example     # 配置模板（每次构建同步）
-```
-
-#### 运行
-
-   ```powershell
-   ./goldieos.exe
-   ```
-
-   启动后打开虚拟设备窗口，可体验开机动画、launcher、设置、闹钟、动画播放等应用，并通过华为云后端进行真实 AI 对话。
-
-> **注意：**
-> - `convai.cfg` 格式为每行一个 `键=值`（等号两侧**不能有空格**），行首 `#` 或 `;` 为注释。
-> - `convai.cfg` 不会被后续构建覆盖；模板有更新时请对照 `convai.cfg.example` 手动同步。
-
----
-
-## 开发文档
-
-| 文档 | 说明 |
-|------|------|
-| [Function Call 开发最佳实践](examples/goldieos/docs/function_call.md) | 如何新增 function call handler、参数解析规范、JSON 协议 |
-
----
-
-> **版本信息：** 本文档基于 AI Hardware Agent SDK 26.6.2 版本编写。
+默认没有恢复旧工程的看门狗关闭配置。若实板触发看门狗，应根据回溯定位阻塞或高优先级忙循环，避免通过关闭看门狗掩盖问题。

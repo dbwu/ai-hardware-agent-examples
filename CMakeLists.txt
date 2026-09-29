@@ -1,64 +1,25 @@
-cmake_minimum_required(VERSION 3.10)
-project(ai_hardware_agent_examples VERSION 26.8.0 LANGUAGES C CXX)
-
-# ====================================================================
-#  Global settings
-# ====================================================================
-
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS OFF)
-
-# Enable compile warnings
-if(MSVC)
-    add_compile_options(/W3)
-else()
-    add_compile_options(-Wall -Wextra)
+cmake_minimum_required(VERSION 3.20)
+set(UNIFIED_BOARD "szpi" CACHE STRING "Board: szpi or lrd")
+set_property(CACHE UNIFIED_BOARD PROPERTY STRINGS szpi lrd)
+if(NOT UNIFIED_BOARD MATCHES "^(szpi|lrd)$")
+    message(FATAL_ERROR "UNIFIED_BOARD must be szpi or lrd")
 endif()
-
-# ====================================================================
-#  Examples  (ws63 firmware / win simulator)
-# ====================================================================
-
-if(CONVAI_PLATFORM STREQUAL "ws63")
-    # ---- C Compile options (RISC-V specific) ----
-    add_compile_options(
-        -w
-        -march=rv32imfc
-        -mabi=ilp32f
-        --short-enums
-        -std=gnu99
-        -fasm
-        -fcommon
-        -Wall -Wextra
-        -Winit-self -Wpointer-arith -Wstrict-prototypes
-        -fno-strict-aliasing
-        -Os
-        -fno-unwind-tables
-        -ffreestanding
-        -fdata-sections -ffunction-sections
-        -nostdlib -pipe
-        -fno-tree-scev-cprop
-        -mpush-pop -msmall-data-limit=0 -fno-ipa-ra
-    )
-    if(EXISTS ${CMAKE_SOURCE_DIR}/src/CMakeLists.txt)
-        add_subdirectory(src)
-    endif()
-    add_subdirectory(examples/goldieos)
-elseif(CONVAI_PLATFORM STREQUAL "goldieos")
-    # ---- Windows simulator (native MinGW gcc/g++) ----
-    # Configure with:
-    #   cmake -G "MinGW Makefiles" -DCONVAI_PLATFORM=goldieos \
-    #         -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
-    #         -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 \
-    #         -DCMAKE_MAKE_PROGRAM=mingw32-make ..
-    message(STATUS "CONVAI_PLATFORM=goldieos: building Windows simulator (goldieos.exe)")
-    if(EXISTS ${CMAKE_SOURCE_DIR}/src/CMakeLists.txt)
-        add_subdirectory(src)
-    endif()
-    add_subdirectory(examples/goldieos)
-else()
-    message(STATUS "CONVAI_PLATFORM not set or unsupported: '${CONVAI_PLATFORM}'. Supported platforms: ws63, win")
+if(DEFINED UNIFIED_CONFIGURED_BOARD AND NOT UNIFIED_CONFIGURED_BOARD STREQUAL UNIFIED_BOARD)
+    message(FATAL_ERROR "Use separate build directories for szpi and lrd")
 endif()
-
-
+set(UNIFIED_CONFIGURED_BOARD "${UNIFIED_BOARD}" CACHE INTERNAL "Configured board")
+set(IDF_TARGET esp32s3)
+set(SDKCONFIG "${CMAKE_BINARY_DIR}/sdkconfig")
+if(NOT SDKCONFIG_DEFAULTS)
+    set(SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/config/common.defaults;${CMAKE_CURRENT_LIST_DIR}/config/${UNIFIED_BOARD}.defaults")
+    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/config/local.defaults")
+        list(APPEND SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/config/local.defaults")
+    endif()
+endif()
+set(CONVAI_SDK_ROOT "${CMAKE_CURRENT_LIST_DIR}/third_party/convai-sdk-26.8.0" CACHE PATH "ConvAI 26.8.0 distribution root (include + libs)")
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+idf_build_set_property(UNIFIED_BOARD "${UNIFIED_BOARD}")
+idf_build_set_property(CONVAI_SDK_ROOT "${CONVAI_SDK_ROOT}")
+idf_build_set_property(MINIMAL_BUILD ON)
+set(PROJECT_VER "0.1.0")
+project(unified_ai_app)
