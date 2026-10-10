@@ -25,13 +25,17 @@ int esp_network_init(void) {
     if (!wifi.Initialize(config)) return -1;
     connecting_since = esp_timer_get_time();
     if (SsidManager::GetInstance().GetSsidList().empty()) wifi.StartConfigAp();
-    else wifi.StartStation();
+    else {
+        wifi.StartStation();
+        wifi.SetPowerSaveLevel(WifiPowerSaveLevel::PERFORMANCE);
+    }
     return 0;
 }
 void esp_network_poll(void) {
     auto &wifi = WifiManager::GetInstance();
     if (retry_station.exchange(false)) {
         wifi.StartStation();
+        wifi.SetPowerSaveLevel(WifiPowerSaveLevel::PERFORMANCE);
         connecting_since = esp_timer_get_time();
     }
     if (online && !sntp_started) {
@@ -47,7 +51,7 @@ void esp_network_poll(void) {
     else if (!wifi.IsConfigMode() && esp_timer_get_time() - connecting_since > 30000000)
         wifi.StartConfigAp();
 }
-bool esp_network_connected(void) { return online.load(); }
+bool esp_network_connected(void) { return online.load() && !WifiManager::GetInstance().IsConfigMode(); }
 void esp_network_provision(void) {
     online = false;
     WifiManager::GetInstance().StartConfigAp();

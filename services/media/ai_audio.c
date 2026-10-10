@@ -26,12 +26,14 @@ int16_t ai_alaw_decode(uint8_t code) {
 int ai_audio_encode_slots(const int16_t *pcm, size_t frames, unsigned slots,
                           unsigned mic, unsigned reference,
                           uint8_t *out, size_t capacity) {
-    if (!pcm || !out || !slots || mic >= slots || reference >= slots ||
+    if (!pcm || !out || !slots || mic >= slots ||
+        (reference != AI_AUDIO_NO_REFERENCE && reference >= slots) ||
         frames > capacity / 2 || frames > INT_MAX / 2 || frames > SIZE_MAX / slots)
         return -1;
     for (size_t i = 0; i < frames; ++i) {
         out[i] = ai_alaw_encode(pcm[i * slots + mic]);
-        out[frames + i] = ai_alaw_encode(pcm[i * slots + reference]);
+        out[frames + i] = ai_alaw_encode(reference == AI_AUDIO_NO_REFERENCE ?
+                                        0 : pcm[i * slots + reference]);
     }
     return (int)(frames * 2);
 }

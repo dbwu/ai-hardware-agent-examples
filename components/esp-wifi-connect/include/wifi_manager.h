@@ -57,12 +57,7 @@ struct WifiManagerConfig {
     // remember_bssid is off). 0 = driver default (one attempt only).
     uint8_t station_failure_retry_cnt = 3;
 
-    // Whether to show the OTA URL field in the config portal advanced tab.
-    // Defaults to false so the field is hidden unless explicitly enabled.
-    bool show_ota_config = false;
 
-    // Whether to show the sleep mode toggle in the config portal advanced tab.
-    bool show_sleep_config = false;
 };
 
 /**

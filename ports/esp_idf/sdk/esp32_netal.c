@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
+#include "lwip/tcp.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -89,9 +90,23 @@ int esp32_socket_connect(convai_socket_t *sock, const char *host,
     return -1;
   }
 
+  /* Voice frames are small and latency-sensitive; do not wait for Nagle's
+   * coalescing plus the peer's delayed ACK before draining the SDK queue. */
+  int no_delay = 1;
+  if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) != 0) {
+    ESP_LOGE(TAG, "TCP_NODELAY failed, errno=%d", errno);
+    freeaddrinfo(res);
+    close(fd);
+    return -1;
+  }
+
   /* 3. Switch to non-blocking before connecting. */
   int flags = fcntl(fd, F_GETFL, 0);
-  fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+  if (flags < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+    freeaddrinfo(res);
+    close(fd);
+    return -1;
+  }
 
   /* 4. Kick off the connect; EINPROGRESS is the expected result. */
   int cr = connect(fd, res->ai_addr, res->ai_addrlen);

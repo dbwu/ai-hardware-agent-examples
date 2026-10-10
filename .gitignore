@@ -3,4 +3,5 @@ managed_components/
 sdkconfig
 sdkconfig.old
 config/local.defaults
+config/ws63.local.h
 __pycache__/

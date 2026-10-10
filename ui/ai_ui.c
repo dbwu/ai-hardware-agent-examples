@@ -1,4 +1,5 @@
 #include "ai_ui.h"
+#include "ai_lvgl.h"
 #include "board.h"
 #include "board_display.h"
 #include "lvgl.h"
@@ -14,7 +15,6 @@ typedef struct { bool pressed; int x, y; } touch_state_t;
 typedef struct { char text[128]; } network_text_t;
 static QueueHandle_t view_queue, network_queue, touch_queue;
 static void (*on_command)(ai_ui_command_t);
-static lv_obj_t *state_label, *network_label, *toggle_label, *toggle_button;
 
 static uint32_t tick_ms(void) { return (uint32_t)(esp_timer_get_time() / 1000); }
 static bool flush_done(esp_lcd_panel_io_handle_t io,
@@ -45,50 +45,14 @@ static void touch_task(void *arg) {
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
-static void toggle(lv_event_t *event) { (void)event; on_command(AI_UI_TOGGLE); }
-static void provision(lv_event_t *event) { (void)event; on_command(AI_UI_PROVISION); }
-
-static lv_obj_t *label(lv_obj_t *parent, int x, int y, int width, const char *text) {
-    lv_obj_t *obj = lv_label_create(parent);
-    lv_obj_set_pos(obj, x, y); lv_obj_set_width(obj, width);
-    lv_label_set_text(obj, text);
-    lv_label_set_long_mode(obj, LV_LABEL_LONG_WRAP);
-    return obj;
-}
-static void build_screen(void) {
-    lv_obj_t *screen = lv_screen_active();
-    lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0x15202b), 0);
-    lv_obj_set_style_text_color(screen, lv_color_hex(0xf2f5f7), 0);
-    label(screen, 16, 12, 288, board_profile.name);
-    state_label = label(screen, 16, 44, 288, "Starting...");
-    network_label = label(screen, 16, 76, 288, "Starting Wi-Fi...");
-    toggle_button = lv_button_create(screen);
-    lv_obj_set_pos(toggle_button, 16, 165); lv_obj_set_size(toggle_button, 174, 52);
-    lv_obj_add_event_cb(toggle_button, toggle, LV_EVENT_CLICKED, NULL);
-    toggle_label = lv_label_create(toggle_button);
-    lv_label_set_text(toggle_label, "Start"); lv_obj_center(toggle_label);
-    lv_obj_add_state(toggle_button, LV_STATE_DISABLED);
-    lv_obj_t *wifi = lv_button_create(screen);
-    lv_obj_set_pos(wifi, 206, 165); lv_obj_set_size(wifi, 98, 52);
-    lv_obj_add_event_cb(wifi, provision, LV_EVENT_CLICKED, NULL);
-    lv_obj_t *text = lv_label_create(wifi);
-    lv_label_set_text(text, "Wi-Fi"); lv_obj_center(text);
-}
 static void ui_task(void *arg) {
     (void)arg;
     for (;;) {
         ai_view_t view;
-        if (xQueueReceive(view_queue, &view, 0) == pdTRUE) {
-            if (view.error) lv_label_set_text_fmt(state_label, "Error %d - tap Start to retry", view.error);
-            else lv_label_set_text(state_label, ai_state_name(view.state));
-            lv_label_set_text(toggle_label, view.active ? "Stop" : "Start");
-            if (view.network_up) lv_obj_remove_state(toggle_button, LV_STATE_DISABLED);
-            else lv_obj_add_state(toggle_button, LV_STATE_DISABLED);
-        }
+        if (xQueueReceive(view_queue, &view, 0) == pdTRUE) ai_lvgl_render(&view);
         network_text_t network;
         if (xQueueReceive(network_queue, &network, 0) == pdTRUE)
-            lv_label_set_text(network_label, network.text);
+            ai_lvgl_network(network.text);
         lv_timer_handler();
         vTaskDelay(pdMS_TO_TICKS(20));
     }
@@ -116,7 +80,7 @@ int ai_ui_init(void (*command)(ai_ui_command_t)) {
     if (!input) return -1;
     lv_indev_set_type(input, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(input, read_touch);
-    build_screen();
+    ai_lvgl_create(board_profile.name, on_command);
     if (xTaskCreate(touch_task, "ai_touch", 3072, NULL, 2, NULL) != pdPASS) return -1;
     return xTaskCreate(ui_task, "ai_ui", 6144, NULL, 4, NULL) == pdPASS ? 0 : -1;
 }

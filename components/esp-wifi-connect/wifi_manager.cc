@@ -247,8 +247,6 @@ void WifiManager::StartConfigAp() {
 
     config_ap_->SetSsidPrefix(config_.ssid_prefix);
     config_ap_->SetLanguage(config_.language);
-    config_ap_->SetShowOtaConfig(config_.show_ota_config);
-    config_ap_->SetShowSleepConfig(config_.show_sleep_config);
 
     // Web handler calls this when user submits config
     config_ap_->OnExitRequested([this]() {

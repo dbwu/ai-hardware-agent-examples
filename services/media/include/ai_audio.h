@@ -2,6 +2,10 @@
 #define AI_AUDIO_H
 #include <stddef.h>
 #include <stdint.h>
+#include <limits.h>
+
+/* Use encoded silence when the capture device has no playback reference. */
+#define AI_AUDIO_NO_REFERENCE UINT_MAX
 
 /* PCM buffers use native int16_t samples. Uplink wire layout is planar:
  * G711A[microphone frames] followed by G711A[echo-reference frames], at 8 kHz.

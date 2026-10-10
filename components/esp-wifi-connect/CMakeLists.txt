@@ -14,9 +14,9 @@ if(IDF_VERSION_MAJOR GREATER_EQUAL 6)
         INCLUDE_DIRS
             "include"
         EMBED_TXTFILES
-            "assets/wifi_configuration.html"
-            "assets/wifi_configuration_done.html"
-        REQUIRES "esp_timer" "esp_http_server" "esp_wifi" "nvs_flash" "cjson"
+            "../../ui/web/wifi_configuration.html"
+            "../../ui/web/wifi_configuration_done.html"
+        REQUIRES "ai_network" "esp_timer" "esp_http_server" "esp_wifi" "nvs_flash" "cjson"
     )
 else()
     # v5
@@ -32,9 +32,9 @@ else()
         INCLUDE_DIRS
             "include"
         EMBED_TXTFILES
-            "assets/wifi_configuration.html"
-            "assets/wifi_configuration_done.html"
-        REQUIRES "esp_timer" "esp_http_server" "esp_wifi" "nvs_flash" "json"
+            "../../ui/web/wifi_configuration.html"
+            "../../ui/web/wifi_configuration_done.html"
+        REQUIRES "ai_network" "esp_timer" "esp_http_server" "esp_wifi" "nvs_flash" "json"
     )
 endif()
 

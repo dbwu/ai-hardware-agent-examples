@@ -19,6 +19,15 @@ int main(void) {
     assert(szpi[0] == ai_alaw_encode(1000) && szpi[1] == ai_alaw_encode(5000));
     assert(lrd[0] == ai_alaw_encode(3000) && lrd[1] == ai_alaw_encode(7000));
     assert(szpi[2] == lrd[2] && szpi[3] == lrd[3]);
+    /* A desktop stereo microphone is not an echo-reference device. Ignore
+     * even a loud right channel, preserve left, encode reference as silence. */
+    int16_t desktop[] = {1000,32767,-2000,-32768};
+    uint8_t win[4];
+    assert(ai_audio_encode_slots(desktop, 2, 2, 0, AI_AUDIO_NO_REFERENCE, win, 4) == 4);
+    assert(win[0] == ai_alaw_encode(1000) && win[1] == ai_alaw_encode(-2000));
+    assert(win[2] == 0xd5 && win[3] == 0xd5);
+    assert(ai_audio_encode_slots(desktop, 2, 2, 0, 2, win, 4) < 0);
+    assert(ai_audio_encode_slots(desktop, 2, 2, 0, AI_AUDIO_NO_REFERENCE, win, 3) < 0);
     assert(ai_audio_encode_slots(raw, 2, 4, 4, 1, szpi, sizeof(szpi)) < 0);
     assert(ai_audio_encode_slots(raw, SIZE_MAX, 4, 0, 1, szpi, sizeof(szpi)) < 0);
     int16_t stereo[8];

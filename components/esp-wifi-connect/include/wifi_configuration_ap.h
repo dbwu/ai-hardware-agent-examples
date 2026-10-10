@@ -35,8 +35,6 @@ public:
     void SetSsidPrefix(const std::string &ssid_prefix);
     void SetLanguage(const std::string &&language);
     void SetLanguage(const std::string &language);
-    void SetShowOtaConfig(bool show) { show_ota_config_ = show; }
-    void SetShowSleepConfig(bool show) { show_sleep_config_ = show; }
     void Start();
     void Stop();
 #if !CONFIG_IDF_TARGET_ESP32P4
@@ -67,14 +65,6 @@ private:
     bool is_connecting_ = false;
     esp_netif_t* ap_netif_ = nullptr;
     std::vector<wifi_ap_record_t> ap_records_;
-
-    // 高级配置项
-    std::string ota_url_;
-    int8_t max_tx_power_;
-    bool remember_bssid_;
-    bool sleep_mode_;
-    bool show_ota_config_ = false;
-    bool show_sleep_config_ = false;
 
     // Callbacks
     std::function<void()> on_exit_requested_;
