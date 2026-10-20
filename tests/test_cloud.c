@@ -6,6 +6,7 @@ static convai_event_handler_t handler;
 static ai_event_t last;
 static int creates, destroys, stops, posts, pushes, resets, finishes, create_result, start_result;
 static bool active, sync_connect;
+static int push_result;
 static ai_uplink_fn send;
 int convai_create(convai_engine_t *out, const char *json,
                   const convai_event_handler_t *cb, void *ctx) {
@@ -33,7 +34,7 @@ static void enable(void *ctx, bool enabled, ai_uplink_fn fn, void *send_ctx) {
 }
 static void reset(void *ctx) { (void)ctx; ++resets; }
 static int push(void *ctx, const uint8_t *data, size_t size) {
-    (void)ctx; assert(data && size); ++pushes; return 0;
+    (void)ctx; assert(data && size); ++pushes; return push_result;
 }
 static void finish(void *ctx) { (void)ctx; ++finishes; }
 static void status(convai_status_e s) { handler.on_convai_conversation_status(NULL, s, NULL); }
@@ -81,5 +82,15 @@ int main(void) {
     assert(last.type == AI_FAILED && last.error == -3);
     ai_cloud_stop(NULL);
     assert(creates == 4 && destroys == 3 && resets > 0);
+    assert(!ai_cloud_start(NULL, 6) && active);
+    push_result = -1;
+    info.data_type = CONVAI_AUDIO_DATA_TYPE_G711A;
+    before = posts;
+    handler.on_convai_audio_data(NULL, audio, sizeof(audio), &info, NULL);
+    assert(posts == before + 1 && last.type == AI_FAILED && last.error == -3);
+    int before_pushes = pushes;
+    handler.on_convai_audio_data(NULL, audio, sizeof(audio), &info, NULL);
+    assert(posts == before + 1 && pushes == before_pushes);
+    assert(!ai_cloud_stop(NULL) && !active);
     puts("cloud failures, synchronous callback, drain, interrupt, disconnect, stop and format rejection passed");
 }

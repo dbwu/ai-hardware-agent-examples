@@ -1,7 +1,21 @@
 build*/
+# Build workflow sources are not generated build directories.
+!skills/build-*/
+!skills/build-*/**
 managed_components/
 sdkconfig
 sdkconfig.old
 config/local.defaults
 config/ws63.local.h
 __pycache__/
+skills/_shared/manifests/cache/
+skills/_shared/manifests/local.json
+skills/_shared/manifests/*.zip
+skills/_shared/manifests/*.7z
+skills/_shared/manifests/*.tar
+skills/_shared/manifests/*.gz
+skills/_shared/manifests/*.exe
+skills/_shared/manifests/*.dll
+skills/_shared/manifests/*.a
+skills/_shared/manifests/*.bin
+skills/_shared/manifests/*.fwpkg

@@ -50,9 +50,21 @@ int main(void) {
     assert(ai_playback_pull(&q, out, 8) == 6);
     const uint8_t expected[] = {5,6,7,8,9,10};
     assert(!memcmp(out, expected, 6));
+    /* A temporary underrun within one answer must not re-arm prebuffering. */
+    assert(!ai_playback_pull(&q, out, sizeof(out)));
+    assert(!ai_playback_push(&q, a, 2));
+    assert(ai_playback_pull(&q, out, sizeof(out)) == 2);
+    assert(!memcmp(out, a, 2));
+    assert(!ai_playback_pull(&q, out, sizeof(out)));
+    assert(!ai_playback_push(&q, b, 1));
+    assert(ai_playback_pull(&q, out, sizeof(out)) == 1 && out[0] == b[0]);
     assert(!ai_playback_push(&q, a, 6));
     uint32_t epoch = q.epoch;
     ai_playback_reset(&q);
     assert(q.epoch != epoch && !q.finished && !q.size && !ai_playback_pull(&q, out, 8));
+    assert(!ai_playback_push(&q, a, 2));
+    assert(!ai_playback_pull(&q, out, sizeof(out))); /* Next answer prebuffers again. */
+    ai_playback_finish(&q);
+    assert(ai_playback_pull(&q, out, sizeof(out)) == 2); /* Short final answer still drains. */
     puts("audio vectors, board slots, bounds, short reply, wrap, overflow and reset passed");
 }

@@ -35,6 +35,6 @@ direct_dependencies:
 - espressif/esp_codec_dev
 - idf
 - lvgl/lvgl
-manifest_hash: 16d0b4b485736384652363711ba51b53464be6d0be75adaf92eb196ea2a39dce
+manifest_hash: aaa3500799a8568d5916f93992e0da16d50a0e0a3b461f602532d380f2fac8e4
 target: esp32s3
 version: 3.0.0

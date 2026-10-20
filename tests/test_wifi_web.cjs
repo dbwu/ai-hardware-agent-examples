@@ -37,7 +37,7 @@ async function fetch(url, options) {
 const document = {getElementById:id=>nodes[id],createElement:element,querySelectorAll:()=>buttons};
 const context = {document,fetch,AbortController,TextEncoder,setTimeout,clearTimeout};
 vm.createContext(context);
-const html = fs.readFileSync(path.join(__dirname,'../ui/web/wifi_configuration.html'),'utf8');
+const html = fs.readFileSync(path.join(__dirname,'../src/application/ui/web/wifi_configuration.html'),'utf8');
 vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1]+'\nglobalThis.test={action,scan,saved,busy:()=>busy};',context);
 async function idle() {
   for (let i=0;i<500 && context.test.busy();++i) await new Promise(resolve=>setTimeout(resolve,10));

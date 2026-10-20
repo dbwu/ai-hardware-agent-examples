@@ -1,6 +1,6 @@
 from pathlib import Path
 import re,subprocess,os
-r=Path(__file__).resolve().parents[1];os.chdir(r);p=r/'REPOSITORY_GUIDE.md';s=p.read_text(encoding='utf-8')
+r=Path(__file__).resolve().parents[1];os.chdir(r);p=r/'docs/repository-guide.md';s=p.read_text(encoding='utf-8')
 files=set(subprocess.check_output(['git','-c','safe.directory='+r.as_posix(),'ls-files','-co','--exclude-standard','-z']).decode().split('\0'))
 files={f for f in files if f and (r/f).is_file()}
 pattern=r'^\| `([^`]+)` \| (\d+|—) \| ([^\n]+) \|$'

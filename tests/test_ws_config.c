@@ -1,4 +1,4 @@
-#include "ws_services.h"
+#include "ws_config.h"
 #include "cJSON.h"
 #include <assert.h>
 #include <string.h>
