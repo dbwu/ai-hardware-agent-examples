@@ -10,7 +10,7 @@
 
 二进制和头文件保留发布包原样。该版本内部已有 `sdk_cJSON_*` 命名空间，仍有部分 `cJSON_*` 外部引用；ESP32 显式依赖 IDF cJSON 组件，WS63 使用 BSP 提供的 cJSON，不使用全局 `--allow-multiple-definition`。
 
-Wi-Fi 配网代码来自原示例中的 esp-wifi-connect 3.2.2，其上游地址、版本和 MIT 许可声明保留在组件的 `idf_component.yml` 中。ESP 板级驱动与 HAL 来自两份 ESP32-S3 示例；WS63 HAL 移植自 GoldieOS 示例，固件还依赖该完整外部 BSP。Brookesia 仅用作分层设计参考，没有引入其运行时或源码。
+Wi-Fi 配网代码来自原示例中的 esp-wifi-connect 3.2.2，其上游地址、版本和 MIT 许可声明保留在组件的 `idf_component.yml` 中。ESP 板级驱动与 HAL 来自两份 ESP32-S3 示例；WS63 HAL 移植自 GoldieOS 示例，所需运行依赖已固定归档到本工程，不再要求完整外部 BSP。Brookesia 仅用作分层设计参考，没有引入其运行时或源码。
 
 ## LVGL 9.5.0 共用界面依赖
 
@@ -21,3 +21,5 @@ ESP32 继续通过 dependencies.lock 获取同版组件；WS63 CMake 校验并�
 WS63 开放热点 ABI 参考海思官方头文件：
 https://gitee.com/HiSpark/fbb_ws63/blob/master/src/include/middleware/services/wifi/wifi_hotspot_config.h
 以及同目录 wifi_device_config.h、wifi_hotspot.h。应用只声明所需的结构布局和两个函数；没有引入整套海思 Wi-Fi 源码。
+
+GoldieOS 固定运行归档、逐文件校验与工具包边界见 [goldieos/README.md](goldieos/README.md)。

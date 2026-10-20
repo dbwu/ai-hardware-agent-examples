@@ -26,7 +26,7 @@ unified-app/
 └── build-*/          本地产物，不上库
 ```
 
-`src` 并不意味着“编译所需的全部源码”。外部库在 `third_party`，润和外部 BSP 位于本项目之外。不能只复制 `src` 就期待构建成功。`tools` 是工程辅助工具，不是烧写到单板上的产品模块。
+`src` 并不意味着“编译所需的全部源码”。外部库在 `third_party`，润和必要运行依赖已固定归档在 third_party，编译工具另行准备。不能只复制 `src` 就期待构建成功。`tools` 是工程辅助工具，不是烧写到单板上的产品模块。
 
 根 [CMakeLists.txt](../../CMakeLists.txt) 选择 `esp32s3`、`goldieos_ws63` 或 `goldieos_windows`；详细构建逻辑由平台目录承担。
 

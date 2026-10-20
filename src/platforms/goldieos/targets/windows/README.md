@@ -8,18 +8,18 @@
 
 ## 构建
 
-需要完整的同级 ai-hardware-agent-examples 仓库、其中的 GoldieOS BSP、64 位 MinGW GCC/G++、CMake 和 Ninja。在 unified-app 根目录运行（工具不在 PATH 时使用其绝对路径）：
+需要本工程内的 GoldieOS 运行归档、64 位 MinGW GCC/G++、CMake 和 Ninja，不需要同级示例仓库。在 unified-app 根目录运行（工具不在 PATH 时使用其绝对路径）：
 
 ```powershell
-cmake -S src/platforms/goldieos/targets/windows -B build-hoperun-win -G Ninja -DCMAKE_C_COMPILER=D:/Code/ai-app-arch/ai-hardware-agent-examples/test/tools/mingw64/bin/gcc.exe -DCMAKE_CXX_COMPILER=D:/Code/ai-app-arch/ai-hardware-agent-examples/test/tools/mingw64/bin/g++.exe -DCMAKE_BUILD_TYPE=Release
+cmake -S src/platforms/goldieos/targets/windows -B build-hoperun-win -G Ninja -DCMAKE_C_COMPILER=<MinGW根>/bin/gcc.exe -DCMAKE_CXX_COMPILER=<MinGW根>/bin/g++.exe -DCMAKE_BUILD_TYPE=Release
 cmake --build build-hoperun-win -j6
 ```
 
-可传入 GOLDIEOS_ROOT、CONVAI_SDK_ROOT、WS63_LOCAL_CONFIG 覆盖默认路径；BSP 须保留完整上级仓库结构。公共 CMake 校验并解压本地 LVGL 源码包。固件的独立构建入口和命令见 [GoldieOS README](../../README.md)，两个目标使用不同构建目录。
+可传入 CONVAI_SDK_ROOT、WS63_LOCAL_CONFIG 覆盖默认配置；GOLDIEOS_ROOT 由工程内归档解压得到。公共 CMake 校验并解压本地 LVGL 源码包。固件的独立构建入口和命令见 [GoldieOS README](../../README.md)，两个目标使用不同构建目录。
 
 运行 build-hoperun-win/unified_ai_simulator.exe。建议以该目录为工作目录，系统网络连接和时间应正确，电脑需具备麦克风和扬声器。实际对话通过 Start 开始。
 
-两种目标默认读取同一个 config/ws63.local.h，修改鉴权后重新配置并编译。SDK 在 Windows 也校验证书。厂商构建脚本可能复制 convai.cfg 示例；本应用不读取它，鉴权以编译时的 ws63.local.h 为准。私有头文件和包含鉴权的 EXE、固件均不入库。
+两种目标默认读取同一个 config/ws63.local.h，修改鉴权后重新配置并编译。SDK 在 Windows 也校验证书。独立工程不再复制旧 convai.cfg 示例；鉴权以编译时的 ws63.local.h 为准。私有头文件和包含鉴权的 EXE、固件均不入库。
 
 ## 验证范围
 

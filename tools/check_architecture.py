@@ -4,6 +4,13 @@ import re
 
 root = Path(__file__).resolve().parents[1]
 errors = []
+# Product build and test code must not require the donor example repository.
+for folder in ('src', 'tests', 'skills/_shared/scripts'):
+    for path in (root / folder).rglob('*'):
+        if path.suffix not in ('.c', '.cpp', '.h', '.cmake', '.ps1') and path.name != 'CMakeLists.txt':
+            continue
+        if 'ai-hardware-agent-examples' in path.read_text(encoding='utf-8'):
+            errors.append(f'{path.relative_to(root)} references the donor repository')
 platform_headers = ('esp_', 'freertos/', 'driver/', 'board', 'ws_board',
                     'sdkconfig', 'goldie_', 'ws_', 'windows.h', 'wininet.h')
 for folder in ('src/application/core', 'src/application/services', 'src/application/ui'):

@@ -6,7 +6,7 @@
 
 根 CMakeLists.txt 保留轻量分发，third_party、config、tests、tools、skills、docs 保留根位置。UNIFIED_APP_ROOT 指工程根，UNIFIED_SOURCE_ROOT 指 src；ESP 组件通过平台 cmake/paths.cmake 在组件依赖扫描与正常配置阶段获得相同路径。GoldieOS 独立入口也计算这两个根路径，不再依赖旧入口位置。
 
-本轮保留功能实现、板型参数和产物名称；build-* 暂不收敛。src 只集中自研产品代码，不包含外部 BSP；根 tools 保留架构检查和清单生成，不纳入一次性调试脚本。迁移旧 GoldieOS 入口的构建缓存时应重新配置；四目标编译通过不替代实机验收。
+本轮保留功能实现、板型参数和产物名称；build-* 暂不收敛。src 只集中自研产品代码，第三方运行依赖归档放在 third_party；根 tools 保留架构检查和清单生成，不纳入一次性调试脚本。迁移旧 GoldieOS 入口的构建缓存时应重新配置；四目标编译通过不替代实机验收。
 
 
 更新日期：2026-10-15。本文中的源码路径均相对于 unified-app 根目录；构建命令也在根目录运行。
@@ -69,7 +69,7 @@ GoldieOS 只是当前润和示例的软件体系，不能代表所有 WS63 伙�
 ## 第一批依赖优化（2026-10-14）
 
 - ESP 的 esp_services 构建聚合已删除，media/network/config/sdk 分别拥有构建组件与公开 include；SDK 的内部 HAL 头仅在 SDK 模块使用。云配置通过 esp_device.h 获取设备 ID，不再引入 TLS、线程等内部类型。
-- GoldieOS 的 ws_services.h 已拆成 media/network/config/ui 接口，各自放在组件 include；ws_app_events.h 仅声明应用拥有的事件投递入口。通过源码级 include 选项声明直接接口依赖，不向所有应用源码公开全部接口。外部 BSP 仍采用单目标构建，尚未实现全部第三方头文件的编译隔离。
+- GoldieOS 的 ws_services.h 已拆成 media/network/config/ui 接口，各自放在组件 include；ws_app_events.h 仅声明应用拥有的事件投递入口。通过源码级 include 选项声明直接接口依赖，不向所有应用源码公开全部接口。固定运行包仍采用单目标构建，尚未实现全部第三方头文件的编译隔离。
 - 板级契约按平台范围放置：src/boards/esp32/include/board.h 与 src/boards/ws63/include/ws_board.h；保留现有 esp32 板级目录名。WS63 接口不返回 AudioService、WLAN、WifiService 句柄。媒体与网络模块自行获取 GoldieOS 服务；runtime 等待基础驱动，boards 保留键盘、电源保持、显示与音频通道布局。头文件迁移不改变接口内容、功能或初始化顺序。
 - ESP 专用显示句柄头位于 src/boards/esp32/common/esp32s3/include，由 ESP board 组件导出；板级契约分别位于 src/boards/esp32/include 和 src/boards/ws63/include，不设置跨平台公共板级头文件目录。
 - 板级实现可以依赖其 BSP 的硬件驱动 API；板级公开契约不包含系统服务类型。当前 ESP 与 GoldieOS 的板级接口仍不同，本轮不强制统一音频驱动 ABI。
@@ -137,7 +137,7 @@ ESP 的 wifi NVS 命名空间新增 profiles0/profiles1 两个带 CRC/代际的�
 
 既有 ai_media_ops_t 与 ai_uplink_fn 从 src/application/services/cloud/include/ai_cloud.h 原样移入 src/application/services/media/include/ai_media.h。这是已被云服务、ESP 媒体和 GoldieOS 媒体实际使用的接口归位，不是新增抽象；类型名称、字段、回调、暂停返回值及上行停止屏障语义不变。
 
-依赖方向为云服务引用媒体契约；两平台媒体头不再引用 ai_cloud.h。ESP 媒体因事件回调仍显式依赖 ai_app.h，但不依赖云生命周期或 SDK 头。ESP 构建中 ai_cloud 公开依赖 ai_media，esp_media 依赖 ai_core/ai_media；GoldieOS 仍沿用既有公共头目录，其外部 BSP 单目标构建边界未进一步改造。
+依赖方向为云服务引用媒体契约；两平台媒体头不再引用 ai_cloud.h。ESP 媒体因事件回调仍显式依赖 ai_app.h，但不依赖云生命周期或 SDK 头。ESP 构建中 ai_cloud 公开依赖 ai_media，esp_media 依赖 ai_core/ai_media；GoldieOS 仍沿用既有公共头目录，其运行包单目标构建边界未进一步改造。
 
 check_architecture.py 增加媒体源码/头文件禁止直接引入 ai_cloud/convai 头的检查。主机云生命周期及云配置测试显式补充媒体头目录。没有改动 .c 业务实现、存储格式、网络流程或线程；不重新引入音频统计、公共邮箱、清空接口或单板 LVGL 配网。未来其他 WS63 或 Linux 后端实现既有媒体契约即可，不必通过云配置头获取媒体类型。
 
@@ -356,3 +356,7 @@ def test_basic_conversation(device, speech):
 2026-10-13 已实施平台目录与组件职责整改；未新增测试协议或 test/release 构建。建议下一次从阶段 0 的四目标能力表和会话/测试协议契约开始评审，再按阶段推进，避免先创建大量空平台或复制各板专用用例。
 
 相关文档：[上库清单](repository-guide.md)、[产品对比](board-comparison.md)、[验证记录](validation.md)。
+
+## GoldieOS 独立交付（2026-10-20）
+
+固件、模拟器和主机测试均从工程内固定归档解压 GoldieOS 必要运行依赖，平台构建脚本归本工程维护，不再推导同级示例目录。板级只提供硬件源文件和布局。编译器/链接/签名器按工具包管理，不混入产品源码；详情见 [依赖说明](../third_party/goldieos/README.md)。旧迁移记录中的外部路径仅表示历史状态。

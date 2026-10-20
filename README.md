@@ -1,12 +1,14 @@
 # Unified AI App
 
+润和固件与模拟器已改用工程内固定 GoldieOS 运行归档；不再依赖同级示例工程。工具链与打包工具独立管理，见 [GoldieOS 运行依赖与工具说明](third_party/goldieos/README.md)。
+
 ## src 产品源码与工程资料分离（2026-10-15）
 
 当前产品源码位于 src/application、src/platforms、src/boards。application/core 管理状态与业务协调，services 提供能力，ui 展示状态；platforms 承接软件平台、入口、HAL 与构建适配；boards 负责具体板型。平台组件的 sdk 目录更名为 convai，内部函数名及 esp_sdk/ai_core/main 构建组件名保持兼容。
 
 根 CMakeLists.txt 保留轻量分发，third_party、config、tests、tools、skills、docs 保留根位置。UNIFIED_APP_ROOT 指工程根，UNIFIED_SOURCE_ROOT 指 src；ESP 组件通过平台 cmake/paths.cmake 在组件依赖扫描与正常配置阶段获得相同路径。GoldieOS 独立入口也计算这两个根路径，不再依赖旧入口位置。
 
-本轮保留功能实现、板型参数和产物名称；build-* 暂不收敛。src 只集中自研产品代码，不包含外部 BSP；根 tools 保留架构检查和清单生成，不纳入一次性调试脚本。迁移旧 GoldieOS 入口的构建缓存时应重新配置；四目标编译通过不替代实机验收。
+本轮保留功能实现、板型参数和产物名称；build-* 暂不收敛。src 只集中自研产品代码，第三方运行依赖位于 third_party；根 tools 保留架构检查和清单生成，不纳入一次性调试脚本。迁移旧 GoldieOS 入口的构建缓存时应重新配置；四目标编译通过不替代实机验收。
 
 
 从立创实战派和利尔达 ESP32-S3 示例提取的最小 AI 语音对话应用。两块板使用同一套应用、云接入、媒体处理和界面，通过构建时选择板级适配。润和 WS63 已新增启动即进入 AI 页面的独立固件入口，共用业务层、音频处理、LVGL 页面源码和手机配网页面。原示例未修改。
@@ -53,7 +55,7 @@ flowchart TD
     WS --> Cloud
     WS --> Media
     WS --> HB[src/boards/ws63/hoperun: 板级适配]
-    HB --> BSP[外部 Hoperun BSP: 驱动与系统服务]
+    HB --> BSP[工程内 GoldieOS 运行包: 驱动与系统服务]
     UI --> Screen[ai_screen.h: 共享布局与状态文案]
     WS --> UI
     WS --> Web[src/application/ui/web: 共用最小配网页面]
@@ -173,7 +175,7 @@ Windows 使用 MinGW 时，可以在其环境中添加 `-G Ninja -DCMAKE_C_COMPI
 可选的 WS63 公共库交叉编译检查（不属于 Hoperun 固件/模拟器构建流程；旧构建目录已清理）：
 
 ```sh
-cmake -S src/platforms/goldieos/cmake/ws63-core -B build-ws63-core -G Ninja -DCMAKE_TOOLCHAIN_FILE=../ai-hardware-agent-examples/cmake/toolchains/ws63-riscv-gcc.cmake
+cmake -S src/platforms/goldieos/cmake/ws63-core -B build-ws63-core -G Ninja -DCMAKE_TOOLCHAIN_FILE=src/platforms/goldieos/cmake/toolchains/ws63-riscv-gcc.cmake -DGOLDIEOS_TOOLS_ROOT=<工具包根>
 cmake --build build-ws63-core
 ```
 
@@ -202,6 +204,6 @@ WS63 自动门户适配：润和预编译 DHCP 服务的实际应答缺少默认
 
 四个入口：[利尔达](skills/build-lrd/SKILL.md)、[实战派](skills/build-szpi/SKILL.md)、[Hoperun 单板](skills/build-hoperun-ws63/SKILL.md)、[Hoperun 模拟器](skills/build-hoperun-simulator/SKILL.md)。脚本、参考、清单和测试统一放 skills/_shared，无独立 SKILL.md。源码仓库提供共用资源，入口可单独阅读，不要求安装另一个 skill。
 
-skills/_shared/manifests/dependencies.json 上库；真实二进制可放 manifests，解压缓存放 manifests/cache，均忽略。内部覆盖清单 local.json 不上库。完整 Hoperun BSP 可通过 BspRoot 指定，或提供可信本地/在线包与 SHA-256；不使用 build 目录冒充完整 BSP。
+skills/_shared/manifests/dependencies.json 上库；真实二进制可放 manifests，解压缓存放 manifests/cache，均忽略。内部覆盖清单 local.json 不上库。GoldieOS 运行依赖随工程固定归档提供，WS63 工具可通过 GoldieosToolsRoot 指定，或使用 ws63_tools 清单中的本地/在线工具包与 SHA-256；无需外部示例仓库。
 
 每个目标独立 build/skills/<target>，依赖缓存共用。已有 EIM 可传 IdfToolsRoot 与其 PythonPath。没有云凭据仍可编译，真实对话需要私有配置；脚本不自动烧写或启动。参考文档说明环境安装及验证边界，干净 Windows 全链路仍需单独验收。

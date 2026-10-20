@@ -12,6 +12,8 @@ add_test(NAME portal_dns_protocol COMMAND test_portal)
 add_compile_options(-Wall -Wextra -Werror -UNDEBUG)
 set(root "${CMAKE_CURRENT_LIST_DIR}/..")
 set(UNIFIED_SOURCE_ROOT "${root}/src")
+include("${UNIFIED_SOURCE_ROOT}/platforms/goldieos/cmake/runtime.cmake")
+set(bsp "${GOLDIEOS_ROOT}")
 add_executable(test_core test_core.c "${UNIFIED_SOURCE_ROOT}/application/core/ai_app.c")
 target_include_directories(test_core PRIVATE "${UNIFIED_SOURCE_ROOT}/application/core/include")
 add_test(NAME core_lifecycle COMMAND test_core)
@@ -30,9 +32,8 @@ add_executable(test_ws_wifi_store test_ws_wifi_store.c
     "${UNIFIED_SOURCE_ROOT}/platforms/goldieos/components/network/ws63/wifi_store.c" "${UNIFIED_SOURCE_ROOT}/application/services/network/ai_provision.c")
 target_include_directories(test_ws_wifi_store PRIVATE "${UNIFIED_SOURCE_ROOT}/platforms/goldieos/components/network/ws63"
     "${UNIFIED_SOURCE_ROOT}/application/services/network/include"
-    "${root}/../ai-hardware-agent-examples/examples/goldieos/include/platform/ws63")
+    "${bsp}/include/platform/ws63")
 add_test(NAME ws63_nv_storage COMMAND test_ws_wifi_store)
-set(bsp "${root}/../ai-hardware-agent-examples/examples/goldieos")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/config_fixture")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/config_fixture/ws63_config.h" [=[
 #define WS_AI_AGENT_ID "test-agent"

@@ -15,7 +15,7 @@
 
 润和长回答专项结论与原始 GoldieOS 示例差异见 [音频定位记录](hoperun-audio-investigation.md)。播放循环间隔包含阻塞写入，不可直接当作线程饥饿时长；最新增加被动交付诊断，保留 21/22 优先级及其他播放、poll 和 TLS 行为，未认定根因修复。
 
-提交下面列出的源码、配置模板、构建入口、测试、文档和必要依赖。SDK 三个平台库及 LVGL 源码归档为构建依赖；原始 SDK tar 可选归档。外部 ai-hardware-agent-examples/GoldieOS BSP、工具链和厂商打包工具不在本清单内，Hoperun 构建须另行提供完整依赖。
+提交下面列出的源码、配置模板、构建入口、测试、文档和必要依赖。SDK 三个平台库及 LVGL 源码归档为构建依赖；原始 SDK tar 可选归档。GoldieOS 运行归档、逐文件清单及构建适配上库，不再依赖外部示例工程。编译器和链接/签名工具包放忽略的 manifests/缓存，可本地导入或配置下载地址；详见 third_party/goldieos/README.md。
 
 ## 不提交的本地文件
 
@@ -38,15 +38,15 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 
 | 目录 | 文本文件数（递归） | 行数（递归） |
 |---|---:|---:|
-| `./（项目合计）` | 213 | 16947 |
+| `./（项目合计）` | 227 | 27149 |
 | `config/` | 7 | 66 |
-| `docs/` | 23 | 4580 |
+| `docs/` | 23 | 4695 |
 | `docs/training/` | 9 | 1146 |
-| `skills/` | 16 | 599 |
-| `skills/_shared/` | 8 | 463 |
-| `skills/_shared/manifests/` | 1 | 37 |
-| `skills/_shared/references/` | 3 | 64 |
-| `skills/_shared/scripts/` | 3 | 328 |
+| `skills/` | 16 | 602 |
+| `skills/_shared/` | 8 | 466 |
+| `skills/_shared/manifests/` | 1 | 38 |
+| `skills/_shared/references/` | 3 | 59 |
+| `skills/_shared/scripts/` | 3 | 335 |
 | `skills/_shared/tests/` | 1 | 34 |
 | `skills/build-hoperun-simulator/` | 2 | 34 |
 | `skills/build-hoperun-simulator/agents/` | 1 | 4 |
@@ -56,7 +56,7 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `skills/build-lrd/agents/` | 1 | 4 |
 | `skills/build-szpi/` | 2 | 34 |
 | `skills/build-szpi/agents/` | 1 | 4 |
-| `src/` | 137 | 9731 |
+| `src/` | 148 | 10798 |
 | `src/application/` | 25 | 1041 |
 | `src/application/core/` | 4 | 286 |
 | `src/application/core/include/` | 2 | 109 |
@@ -70,7 +70,7 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `src/application/ui/` | 6 | 201 |
 | `src/application/ui/include/` | 3 | 42 |
 | `src/application/ui/web/` | 2 | 104 |
-| `src/boards/` | 27 | 1540 |
+| `src/boards/` | 27 | 1539 |
 | `src/boards/esp32/` | 22 | 1434 |
 | `src/boards/esp32/common/` | 5 | 469 |
 | `src/boards/esp32/common/esp32s3/` | 5 | 469 |
@@ -78,10 +78,10 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `src/boards/esp32/include/` | 1 | 21 |
 | `src/boards/esp32/lrd/` | 8 | 493 |
 | `src/boards/esp32/szpi/` | 8 | 451 |
-| `src/boards/ws63/` | 5 | 106 |
-| `src/boards/ws63/hoperun/` | 4 | 94 |
+| `src/boards/ws63/` | 5 | 105 |
+| `src/boards/ws63/hoperun/` | 4 | 93 |
 | `src/boards/ws63/include/` | 1 | 12 |
-| `src/platforms/` | 85 | 7150 |
+| `src/platforms/` | 96 | 8218 |
 | `src/platforms/esp_idf/` | 47 | 3864 |
 | `src/platforms/esp_idf/cmake/` | 17 | 166 |
 | `src/platforms/esp_idf/cmake/components/` | 16 | 163 |
@@ -113,15 +113,16 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `src/platforms/esp_idf/entry/` | 1 | 94 |
 | `src/platforms/esp_idf/targets/` | 2 | 37 |
 | `src/platforms/esp_idf/targets/esp32s3/` | 2 | 37 |
-| `src/platforms/goldieos/` | 37 | 3255 |
-| `src/platforms/goldieos/cmake/` | 3 | 95 |
+| `src/platforms/goldieos/` | 48 | 4323 |
+| `src/platforms/goldieos/cmake/` | 13 | 1131 |
+| `src/platforms/goldieos/cmake/toolchains/` | 2 | 115 |
 | `src/platforms/goldieos/cmake/ws63-core/` | 1 | 23 |
-| `src/platforms/goldieos/components/` | 28 | 2830 |
+| `src/platforms/goldieos/components/` | 29 | 2876 |
 | `src/platforms/goldieos/components/config/` | 3 | 60 |
 | `src/platforms/goldieos/components/config/include/` | 1 | 11 |
-| `src/platforms/goldieos/components/convai/` | 4 | 1690 |
+| `src/platforms/goldieos/components/convai/` | 5 | 1736 |
 | `src/platforms/goldieos/components/convai/windows/` | 1 | 761 |
-| `src/platforms/goldieos/components/convai/ws63/` | 2 | 926 |
+| `src/platforms/goldieos/components/convai/ws63/` | 3 | 968 |
 | `src/platforms/goldieos/components/media/` | 3 | 316 |
 | `src/platforms/goldieos/components/media/include/` | 1 | 15 |
 | `src/platforms/goldieos/components/network/` | 10 | 572 |
@@ -136,20 +137,21 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `src/platforms/goldieos/components/ui/include/` | 1 | 13 |
 | `src/platforms/goldieos/entry/` | 1 | 111 |
 | `src/platforms/goldieos/include/` | 1 | 13 |
-| `src/platforms/goldieos/targets/` | 3 | 118 |
-| `src/platforms/goldieos/targets/windows/` | 2 | 58 |
-| `src/platforms/goldieos/targets/ws63/` | 1 | 60 |
-| `tests/` | 19 | 973 |
+| `src/platforms/goldieos/targets/` | 3 | 104 |
+| `src/platforms/goldieos/targets/windows/` | 2 | 54 |
+| `src/platforms/goldieos/targets/ws63/` | 1 | 50 |
+| `tests/` | 19 | 974 |
 | `tests/stubs/` | 4 | 42 |
 | `tests/stubs/goldie_media/` | 3 | 23 |
 | `tests/stubs/goldie_media/lwip/` | 1 | 5 |
-| `third_party/` | 5 | 625 |
+| `third_party/` | 8 | 9629 |
 | `third_party/convai-sdk-26.8.0/` | 4 | 602 |
 | `third_party/convai-sdk-26.8.0/include/` | 4 | 602 |
 | `third_party/convai-sdk-26.8.0/include/convai/` | 4 | 602 |
-| `tools/` | 2 | 85 |
+| `third_party/goldieos/` | 3 | 9002 |
+| `tools/` | 2 | 92 |
 
-根目录直属文本文件：4 个，共 288 行；已包含在项目合计中。
+根目录直属文本文件：4 个，共 293 行；已包含在项目合计中。
 
 ## 根目录、文档与 ESP 应用入口
 
@@ -157,20 +159,20 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 
 | 文件 | 行数 | 用途及提交要求 |
 |---|---:|---|
-| `.gitignore` | 21 | 排除构建目录、下载缓存和本地鉴权配置 |
-| `docs/architecture.md` | 358 | 说明当前依赖方向及未改变范围 |
+| `.gitignore` | 24 | 排除构建目录、下载缓存和本地鉴权配置 |
+| `docs/architecture.md` | 362 | 说明当前依赖方向及未改变范围 |
 | `docs/architecture-walkthrough.md` | 314 | 基于源码梳理整体架构、四张流程/复用图、验证与规划边界及 14 页分享提纲 |
 | `docs/hoperun-audio-investigation.md` | 184 | 保存单次预缓冲复测及原始 GoldieOS 对照，区分报错路径、优先级/播放/SDK 差异与待验证根因 |
-| `docs/ai-hardware-ecosystem.md` | 273 | AI 硬件生态调研、产品对比与扩展建议 |
+| `docs/ai-hardware-ecosystem.md` | 338 | AI 硬件生态调研、产品对比与扩展建议 |
 | `docs/changes-src-layout-2026-10-15.md` | 191 | src、application/core、platforms 与 convai 迁移的逐文件记录及验证 |
 | `src/platforms/esp_idf/cmake/paths.cmake` | 3 | 为 ESP 组件扫描和配置提供工程根及源码根路径 |
 | `docs/changes-shared-layout-2026-10-15.md` | 81 | 公共目录与平台入口迁移的逐文件修改、构建证据及产物哈希 |
 | `docs/stage0-contracts.md` | 247 | 阶段 0 四目标能力基线、会话与测试协议草案、首批验收用例、待确认项和退出条件 |
 | `docs/board-comparison.md` | 310 | 芯片平台、三款板级实现和 Hoperun Windows 模拟器对比及当前验收状态 |
 | `CMakeLists.txt` | 20 | 轻量构建分发；默认 ESP32-S3，支持 GoldieOS WS63/Windows，阻止跨目标复用缓存 |
-| `README.md` | 207 | 更新媒体契约归属 |
-| `docs/repository-guide.md` | 526 | 同步文件用途及行数 |
-| `docs/validation.md` | 803 | 记录测试、四目标构建及产物哈希 |
+| `README.md` | 209 | 更新媒体契约归属 |
+| `docs/repository-guide.md` | 550 | 同步文件用途及行数 |
+| `docs/validation.md` | 825 | 记录测试、四目标构建及产物哈希 |
 | `dependencies.lock` | 40 | 锁定组件版本和内容校验值；应与 manifest 一起提交 |
 | `src/platforms/esp_idf/cmake/components/main/CMakeLists.txt` | 3 | 注册应用入口组件及其依赖 |
 | `src/platforms/esp_idf/cmake/components/main/Kconfig.projbuild` | 28 | menuconfig 中的 Agent、鉴权、服务地址、音量与播放缓冲选项；默认鉴权值为空 |
@@ -249,7 +251,7 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 |---|---:|---|
 | `src/boards/ws63/hoperun/README.md` | 14 | 新增同类 WS63 板的步骤与 BSP 兼容边界。 |
 | `src/boards/ws63/hoperun/board.c` | 57 | Hoperun 键盘、电源保持及音频布局；服务获取已归平台组件。 |
-| `src/boards/ws63/hoperun/board.cmake` | 3 | Hoperun BSP 默认路径和板级源文件清单。 |
+| `src/boards/ws63/hoperun/board.cmake` | 2 | Hoperun BSP 默认路径和板级源文件清单。 |
 | `src/boards/ws63/hoperun/display.c` | 20 | 显示字节序与分块写入。 |
 | `src/boards/ws63/include/ws_board.h` | 12 | WS63 板级接口、板名和采集布局；服务句柄须兼容当前 GoldieOS 后端 |
 
@@ -276,7 +278,7 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `src/platforms/goldieos/README.md` | 88 | WS63 独立应用架构、BSP 依赖、配置、固件构建及验收边界 |
 | `src/platforms/goldieos/cmake/board.cmake` | 16 | WS63_BOARD 选择、合法性校验及禁止跨板复用构建目录。 |
 | `src/platforms/goldieos/cmake/common.cmake` | 56 | GoldieOS 公共源码及组件构建组装 |
-| `src/platforms/goldieos/targets/ws63/CMakeLists.txt` | 60 | WS63 固件构建入口；选板、BSP 裁剪、TLS/网页/网关适配链接，按 WS63_BOARD 导出镜像 |
+| `src/platforms/goldieos/targets/ws63/CMakeLists.txt` | 50 | WS63 固件构建入口；选板、BSP 裁剪、TLS/网页/网关适配链接，按 WS63_BOARD 导出镜像 |
 | `src/platforms/goldieos/entry/app.c` | 111 | GoldieOS 启动及事件循环，使用本地受锁保护队列 |
 | `src/platforms/goldieos/components/config/config.c` | 39 | 从私有头文件读取鉴权，构造并校验 SDK JSON |
 | `src/platforms/goldieos/components/network/ws63/dhcp_gateway.c` | 41 | 当前 Hoperun BSP 缺少 DHCP 网关选项的兼容处理，校验边界并重算 UDP 校验和 |
@@ -298,7 +300,7 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 
 | 文件 | 行数 | 用途及提交要求 |
 |---|---:|---|
-| `src/platforms/goldieos/targets/windows/CMakeLists.txt` | 30 | MinGW 模拟器目标、Windows SDK/HAL 及厂商虚拟设备链接 |
+| `src/platforms/goldieos/targets/windows/CMakeLists.txt` | 26 | MinGW 模拟器目标、Windows SDK/HAL 及厂商虚拟设备链接 |
 | `src/platforms/goldieos/targets/windows/README.md` | 28 | 模拟器依赖、构建运行、配置来源与验证边界 |
 | `src/platforms/goldieos/components/runtime/windows/runtime.c` | 17 | Windows 时间、SDK 初始化及板级启动适配；网络已独立到 network 组件 |
 | `src/platforms/goldieos/components/convai/windows/sdk_platform.c` | 761 | Windows SDK 平台实现，包含线程、网络、TLS 证书校验与日志 |
@@ -351,7 +353,7 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 
 | 文件 | 行数 | 用途及提交要求 |
 |---|---:|---|
-| `tests/CMakeLists.txt` | 85 | 云/配置测试声明直接使用的媒体头目录 |
+| `tests/CMakeLists.txt` | 86 | 云/配置测试声明直接使用的媒体头目录 |
 | `tests/test_audio.c` | 70 | 删除统计断言，保留音频算法/缓冲行为测试 |
 | `tests/test_cloud.c` | 96 | 使用假 SDK 测试云适配的创建/启动失败、回调、打断和停止行为 |
 | `tests/test_core.c` | 61 | 状态机启停、断线、迟到事件、错误、超时和重复会话测试 |
@@ -361,14 +363,14 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `tests/test_wifi_web.cjs` | 75 | 执行真实共用页面脚本，验证扫描去重、特殊名称、保存/默认/删除、退出及错误；需 Node |
 | `tests/test_ws_config.c` | 26 | 测试真实云配置生成、设备标识失败、内存失败恢复及 JSON 数字类型 |
 | `tests/test_ws_wifi_store.c` | 40 | 模拟 NV 的重启加载、读写失败、冲突保护、校验回退和删除回归 |
-| `tools/check_architecture.py` | 47 | 防止媒体模块直接引入云或 SDK 头 |
+| `tools/check_architecture.py` | 54 | 防止媒体模块直接引入云或 SDK 头 |
 | `tools/update_repository_guide.py` | 38 | 从 Git 候选文件集合检查清单覆盖率、更新逐文件及目录行数；与执行目录无关，不读取鉴权内容。 |
 
 ## 第三方依赖
 
 | 文件 | 行数 | 用途及提交要求 |
 |---|---:|---|
-| `third_party/README.md` | 23 | SDK 下载来源、版本、SHA-256 和依赖说明；提交 |
+| `third_party/README.md` | 25 | SDK 下载来源、版本、SHA-256 和依赖说明；提交 |
 | `third_party/convai-sdk-26.8.0/include/convai/convai_api.h` | 162 | 引擎创建、启停、收发等公共 API；提交 |
 | `third_party/convai-sdk-26.8.0/include/convai/convai_event.h` | 124 | 事件类型与回调定义；提交 |
 | `third_party/convai-sdk-26.8.0/include/convai/convai_platform.h` | 148 | 平台 HAL ABI 与接口；提交 |
@@ -415,7 +417,7 @@ src/boards/esp32/common/esp32s3 为两块 ESP 板的共用实现，不代表 WS6
 | `src/platforms/goldieos/components/media/component.cmake` | 3 | GoldieOS media 组件源文件与依赖注册；按需要选择后端 |
 | `src/platforms/goldieos/components/network/component.cmake` | 28 | GoldieOS network 组件源文件与依赖注册；按需要选择后端 |
 | `src/platforms/goldieos/components/runtime/component.cmake` | 3 | GoldieOS runtime 组件源文件与依赖注册；按需要选择后端 |
-| `src/platforms/goldieos/components/convai/component.cmake` | 3 | GoldieOS sdk 组件源文件与依赖注册；按需要选择后端 |
+| `src/platforms/goldieos/components/convai/component.cmake` | 7 | GoldieOS sdk 组件源文件与依赖注册；按需要选择后端 |
 | `src/platforms/goldieos/components/ui/component.cmake` | 18 | GoldieOS ui 组件源文件与依赖注册；按需要选择后端 |
 
 ## 提交前检查
@@ -446,11 +448,11 @@ git add --dry-run -- .
 | `skills/build-hoperun-ws63/agents/openai.yaml` | 4 | 该目标的显示名称及调用提示。 |
 | `skills/build-hoperun-simulator/SKILL.md` | 30 | 独立目标入口、调用条件、参数、产物与验收边界。 |
 | `skills/build-hoperun-simulator/agents/openai.yaml` | 4 | 该目标的显示名称及调用提示。 |
-| `skills/_shared/scripts/build.ps1` | 137 | 共用构建引擎、输出隔离与摘要交付。 |
+| `skills/_shared/scripts/build.ps1` | 143 | 共用构建引擎、输出隔离与摘要交付。 |
 | `skills/_shared/scripts/dependencies.ps1` | 90 | 本地/缓存/下载归档校验与解压。 |
-| `skills/_shared/scripts/esp-idf.ps1` | 101 | ESP-IDF 安装、EIM 环境复用和合并镜像。 |
-| `skills/_shared/manifests/dependencies.json` | 37 | 版本、可信地址与 SHA-256；完整 BSP 来源由用户配置。 |
-| `skills/_shared/references/hoperun.md` | 19 | 最新 Hoperun 单板/模拟器与完整 BSP 要求。 |
+| `skills/_shared/scripts/esp-idf.ps1` | 102 | ESP-IDF 安装、EIM 环境复用和合并镜像。 |
+| `skills/_shared/manifests/dependencies.json` | 38 | 版本、可信地址与 SHA-256；WS63 工具包支持本地路径/HTTPS 与校验值。 |
+| `skills/_shared/references/hoperun.md` | 14 | 独立 Hoperun 单板/模拟器、运行归档与工具包要求。 |
 | `skills/_shared/references/esp-idf.md` | 20 | ESP 两板安装、离线和 EIM 使用。 |
 | `skills/_shared/references/dependencies.md` | 25 | 清单、本地包、来源和验证边界。 |
 | `skills/_shared/tests/dependencies.tests.ps1` | 34 | 本地包/缓存/坏校验值/离线/目录边界测试。 |
@@ -524,3 +526,25 @@ git add --dry-run -- .
 | `src/application/services/media/include/ai_media.h` | 19 | 承接既有媒体操作及上行回调声明，无新增接口 |
 | `docs/changes-media-contract-2026-10-15.md` | 21 | 本轮逐文件变更记录 |
 
+
+## GoldieOS 独立工程新增依赖（2026-10-20）
+
+归档内部清单见 third_party/goldieos/files.json，不将解压缓存重复计入源码清单。工具包与编译器缓存不提交。
+
+| 文件 | 行数 | 说明 |
+|---|---:|---|
+| `src/platforms/goldieos/cmake/convai-artifacts.cmake` | 102 | 本工程产物命名、版本副本与文件复制构建函数。 |
+| `src/platforms/goldieos/cmake/convai-build-options.cmake` | 89 | 本工程通用警告及 WS63 ABI 编译选项。 |
+| `src/platforms/goldieos/cmake/goldieos-common.cmake` | 130 | 组装保留的公共运行源码与 Opus；不包含旧应用或 AI bridge。 |
+| `src/platforms/goldieos/cmake/goldieos-win.cmake` | 103 | Windows 虚拟设备、核心库和系统链接配置。 |
+| `src/platforms/goldieos/cmake/goldieos-ws63.cmake` | 132 | WS63 运行源码、驱动与平台编译配置。 |
+| `src/platforms/goldieos/cmake/runtime.cmake` | 18 | 校验工程内 GoldieOS 归档并解压至独立构建目录。 |
+| `src/platforms/goldieos/cmake/toolchains/ws63-compiler-launcher.bat` | 19 | 确保指定 RISC-V 编译器及运行库可被子进程找到。 |
+| `src/platforms/goldieos/cmake/toolchains/ws63-riscv-gcc.cmake` | 96 | 从配置工具根选择编译器，不推导外部示例目录。 |
+| `src/platforms/goldieos/cmake/ws63-firmware.cmake` | 158 | 暂存运行库和链接配置，调用独立工具包生成固件。 |
+| `src/platforms/goldieos/cmake/ws63-mbedtls.cmake` | 189 | 从固定运行包重建 mbedTLS 与海思加固适配。 |
+| `src/platforms/goldieos/components/convai/ws63/convai_memory_budget.h` | 42 | 厂商 TLS 配置依赖的内存预算常量，脱离旧 AI bridge。 |
+| `third_party/goldieos/checksums.cmake` | 2 | 固定运行归档 SHA-256。 |
+| `third_party/goldieos/files.json` | 8972 | 归档逐文件路径、大小和 SHA-256；不含本地绝对路径。 |
+| `third_party/goldieos/README.md` | 28 | 依赖范围、来源、工具包与上库边界说明。 |
+| `third_party/goldieos/runtime.tar.gz` | — | GoldieOS 必要运行源码、头文件、成套库与打包配置归档；二进制不计行数。 |

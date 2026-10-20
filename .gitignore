@@ -8,6 +8,9 @@ sdkconfig.old
 config/local.defaults
 config/ws63.local.h
 __pycache__/
+# Local source/document snapshots are not build dependencies.
+/docs.zip
+/src.zip
 skills/_shared/manifests/cache/
 skills/_shared/manifests/local.json
 skills/_shared/manifests/*.zip

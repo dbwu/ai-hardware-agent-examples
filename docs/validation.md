@@ -1,5 +1,27 @@
 # 验证记录
 
+## GoldieOS 独立工程迁移（2026-10-20）
+
+- GoldieOS 必要运行依赖固定归档到 third_party/goldieos/runtime.tar.gz，1794 个文件的路径/大小/校验值见随包 JSON。移除旧 apps、AI bridge、旧入口及历史版本打包模板；保留与 ABI 配套的系统/模拟器库，不声称裁剪闭源库内部功能。运行归档与清单上库；WS63 编译器、链接/签名工具包与解压缓存忽略不上库。
+- 平台 CMake、工具链定义和打包逻辑归本工程；固件、模拟器、主机测试及 skill 不再依赖原同级示例仓库。GOLDIEOS_ROOT 是构建内解压路径，不是外部仓库入口；旧 BspRoot 参数替换为 GoldieosToolsRoot。工具包可本地提供或配置固定 HTTPS URL/校验值，目前无已确认公开下载地址。
+- 四目标在全新 build/solo-* 目录通过更新后的 skill 构建，两款 ESP 合并镜像生成成功；14/14 主机测试、依赖加载器本地/缓存/错误校验测试、架构检查、两款润和 skill 元数据及 PowerShell 语法检查通过。运行归档全部逐文件 SHA-256 校验通过。
+- 检查五个新构建目录（含主机测试）的 build.ninja，无原示例仓库路径；迁移准备工具时复制了本机已有编译器到忽略缓存，此后构建只使用工程依赖及已安装/缓存工具，不声称干净 Windows 下载全链路已验证。
+- ESP 首轮实战派遇到 GCC 内部 Segmentation fault；降低并行度重试通过。共用 skill 已修正为先 IDF reconfigure，再由 cmake --build --parallel 使用 Jobs 参数。润和 BSP 既有编译警告保留。
+- 利尔达为后续烧写恢复此前 build-lrd/sdkconfig 的本地配置并重编；鉴权未输出、不上库。润和沿用 config/ws63.local.h；模拟器随后按用户要求启动：进程 19716，窗口 Responding=True；界面与对话功能待用户验证。
+- 本地日志与 build-result.json 位于各 build/solo-*；测试日志位于 build/migration/tests-*.log。工具包详情见 [依赖说明](../third_party/goldieos/README.md)。原示例目录未修改。
+
+| 目标 | 产物（工程相对路径） | 字节数 | SHA-256 |
+|---|---|---:|---|
+| 利尔达 | `build/solo-lrd/unified_ai_lrd_merged.bin` | 1654208 | `f891545002f933ec92c35f756e6b8786ef27744b9fc468004b9d397715673289` |
+| 实战派 | `build/solo-szpi/unified_ai_szpi_merged.bin` | 1657408 | `ca13bb71b25c71acb3919f29b08091fa44d900cf4c9c4197b02e0d0e1cf6328e` |
+| 润和 WS63 | `build/solo-ws63/out/unified_ai_hoperun.fwpkg` | 2238984 | `0c9c9d105363c506e6518900b4c211ce2e4e5c052c4303c0bab653d8136ef9e2` |
+| Windows 模拟器 | `build/solo-win/unified_ai_simulator.exe` | 3679163 | `71ce1536558d0d17f65a3547e24220b94349c3a031c016525c20f4e59831f4e4` |
+
+- 润和已烧写上述独立工程镜像；成功日志为 build/migration/standalone-flash.log，功能待用户验证。
+- 利尔达已烧写上述独立工程镜像；成功日志为 build/migration/lrd-flash.log，功能待用户验证。
+- 润和烧写工具退出码 0；随后串口启动日志采集未获执行授权，未据此确认初始化或对话成功。
+
+
 ## 板级头文件按平台范围归位（2026-10-20）
 
 - `src/boards/include/board.h` 移至 `src/boards/esp32/include/board.h`，`ws_board.h` 移至 `src/boards/ws63/include/ws_board.h`；保留现有 esp32 目录名及头文件内容，不修改接口、硬件参数或运行行为。

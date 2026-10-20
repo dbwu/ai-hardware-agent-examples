@@ -19,7 +19,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<RepoRoot>/skills/_shared/s
 
 Windows x64、PowerShell 5.1+。脚本从进程 PATH/用户明确路径解析工具，缺失时按 skills/_shared/manifests/dependencies.json 下载并校验便携工具。归档可放该 manifests 目录，解压缓存默认 manifests/cache；二进制和 local.json 忽略不上库。版本固定，不自动升级。可传 DependencyManifest、CacheRoot、BuildRoot、Offline、PrepareOnly；不覆盖真实鉴权。
 
-Hoperun 必须提供完整 BspRoot（ai-hardware-agent-examples 仓库根，不是 examples/goldieos 或 build 目录），或清单中可信 BSP 归档地址/本地包与 SHA-256。WS63 工具链/链接/签名工具包含在完整 BSP 中；模拟器可传 MinGWRoot。不具备 BSP 来源时明确报告缺项。
+GoldieOS 运行依赖随工程固定归档提供，不读取外部示例仓库。WS63 使用清单 ws63_tools 的本地/HTTPS 工具包，或传 GoldieosToolsRoot 指向包含 compiler/、链接器和签名器的工具根。模拟器只需 MinGWRoot 或清单中的 MinGW，不需要 WS63 工具包。工具缺失时报告缺项；不恢复旧 BspRoot 参数。
 
 ## 验证与交付
 

@@ -5,7 +5,7 @@ param(
     [string]$BuildRoot,
     [string]$CacheRoot,
     [string]$DependencyManifest,
-    [string]$BspRoot,
+    [string]$GoldieosToolsRoot,
     [string]$SdkRoot,
     [string]$MinGWRoot,
     [string]$IdfRoot,
@@ -64,28 +64,34 @@ try {
         if (!(Test-Path -LiteralPath (Join-Path $SdkRoot $file))) { throw "Incomplete matching SDK: $file" }
     }
     if ($Target.StartsWith('hoperun-')) {
-        if (!$BspRoot) { $BspRoot = Get-Dependency 'bsp' $manifest.bsp $manifestDirectory $CacheRoot -Offline:$Offline }
-        $BspRoot = (Resolve-Path -LiteralPath $BspRoot).Path
-        $goldie = Join-Path $BspRoot 'examples/goldieos'
-        foreach ($file in @('cmake/convai-build-options.cmake','examples/goldieos/cmake/goldieos-common.cmake')) {
-            if (!(Test-Path -LiteralPath (Join-Path $BspRoot $file))) { throw "Incomplete BSP repository: $file" }
+        $runtimeArchive = Join-Path $RepoRoot 'third_party/goldieos/runtime.tar.gz'
+        $runtimePin = Get-Content (Join-Path $RepoRoot 'third_party/goldieos/checksums.cmake') -Raw
+        if ($runtimePin -notmatch 'GOLDIEOS_RUNTIME_SHA256\s+"([a-f0-9]{64})"') { throw 'Missing GoldieOS runtime checksum' }
+        $runtimeHash = $matches[1]
+        if (!(Test-Path -LiteralPath $runtimeArchive) -or
+            (Get-FileHash -LiteralPath $runtimeArchive -Algorithm SHA256).Hash -ne $runtimeHash) {
+            throw 'Missing or modified bundled GoldieOS runtime archive'
         }
         $backend = if ($Target -eq 'hoperun-app') {'ws63'} else {'windows'}
         $configure = @('-S',(Join-Path $RepoRoot "src/platforms/goldieos/targets/$backend"),'-B',$BuildRoot,'-G','Ninja',
             "-DCMAKE_MAKE_PROGRAM=$ninja",'-DCMAKE_BUILD_TYPE=Release','-DWS63_BOARD=hoperun',
-            "-DGOLDIEOS_ROOT=$goldie","-DCONVAI_SDK_ROOT=$SdkRoot")
+            "-DCONVAI_SDK_ROOT=$SdkRoot")
         if ($LocalConfig) {
             $LocalConfig = (Resolve-Path -LiteralPath $LocalConfig).Path
             $configure += "-DWS63_LOCAL_CONFIG=$LocalConfig"
         }
         if ($backend -eq 'ws63') {
-            $chain = Join-Path $BspRoot 'cmake/toolchains/ws63-riscv-gcc.cmake'
-            $compilerBin = Join-Path $goldie 'tools/build/tools/compiler/riscv/cc_riscv32_musl_105/cc_riscv32_musl_fp_win/bin'
-            foreach ($file in @($chain,(Join-Path $compilerBin 'riscv32-linux-musl-gcc.exe'),(Join-Path $goldie 'tools/build/tools/ws63_link_v4.exe'),(Join-Path $goldie 'tools/build/tools/ws63_sign_tool.exe'))) {
-                if (!(Test-Path -LiteralPath $file)) { throw 'BSP missing RISC-V toolchain/linker/signer; use complete BSP package' }
+            if (!$GoldieosToolsRoot) {
+                $GoldieosToolsRoot = Get-Dependency 'ws63_tools' $manifest.ws63_tools $manifestDirectory $CacheRoot -Offline:$Offline
+            }
+            $GoldieosToolsRoot = (Resolve-Path -LiteralPath $GoldieosToolsRoot).Path
+            $chain = Join-Path $RepoRoot 'src/platforms/goldieos/cmake/toolchains/ws63-riscv-gcc.cmake'
+            $compilerBin = Join-Path $GoldieosToolsRoot 'compiler/bin'
+            foreach ($file in @((Join-Path $compilerBin 'riscv32-linux-musl-gcc.exe'),(Join-Path $GoldieosToolsRoot 'ws63_link_v4.exe'),(Join-Path $GoldieosToolsRoot 'ws63_sign_tool.exe'))) {
+                if (!(Test-Path -LiteralPath $file)) { throw 'Incomplete WS63 tool bundle: compiler/bin, linker and signer required' }
             }
             $env:PATH = $compilerBin + ';' + $env:PATH
-            $configure += "-DCMAKE_TOOLCHAIN_FILE=$chain"
+            $configure += @("-DCMAKE_TOOLCHAIN_FILE=$chain","-DGOLDIEOS_TOOLS_ROOT=$GoldieosToolsRoot")
             $artifact = Join-Path $BuildRoot 'out/unified_ai_hoperun.fwpkg'
         } else {
             if (!$MinGWRoot) { $MinGWRoot = Get-Dependency 'mingw' $manifest.mingw $manifestDirectory $CacheRoot -Offline:$Offline }

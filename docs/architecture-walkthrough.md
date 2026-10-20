@@ -29,7 +29,7 @@ Windows 模拟器复用应用与页面，使用 Windows 网络和虚拟设备接
 | `src/platforms/*/entry/` | 组装依赖、初始化、事件队列、owner 循环 | 连接公共模块与平台实现，不承载板级驱动 |
 | `src/platforms/*/components/` | 网络、媒体任务、配置、UI 接入、SDK HAL、运行环境适配 | ESP-IDF 与 GoldieOS 保持相近职责，但文件实现按后端需要组织 |
 | `src/boards/esp32/` | 两板配置、引脚、屏幕/触摸、Codec 与音频布局 | `common/esp32s3` 仅为 ESP32-S3 共用，不是全平台公共层 |
-| `src/boards/ws63/hoperun/` | 润和板级服务接入、显示传输、音频布局、BSP 选择 | 底层仍依赖外部润和 BSP；不是自包含驱动全集 |
+| `src/boards/ws63/hoperun/` | 润和板级服务接入、显示传输、音频布局、BSP 选择 | 底层使用工程内固定 GoldieOS 运行归档；工具链单独准备 |
 | `config/`、`third_party/` | 配置模板、锁定的 SDK/必要依赖 | 实际鉴权、生成配置、镜像和本地日志不作为普通源码提交 |
 
 ### 图 1：整体架构与依赖关系
@@ -65,7 +65,7 @@ flowchart TB
     SDK -.HAL 接入.-> HAL
     Port --> OS[厂商 SDK / OS / Windows API]
     HAL --> OS
-    Board --> BSP[板级驱动或外部 BSP]
+    Board --> BSP[板级驱动与固定运行包]
 ```
 
 图中的媒体依赖是 `ai_media_ops_t` 等契约与公共处理能力，不表示公共 cloud 可以直接操作 I2S。平台媒体实现无需包含 cloud 生命周期头。UI 的屏幕适配也由平台/板级接线，公共页面不选择具体芯片。
@@ -84,7 +84,7 @@ flowchart TB
     EBoard --> SZPI[src/boards/esp32/szpi：实战派固件]
     Gold --> WS[组件内 ws63 后端：网络、runtime、SDK]
     Gold --> Win[组件内 windows 后端：网络、runtime、SDK]
-    WS --> HB[src/boards/ws63/hoperun + 外部 BSP：润和固件]
+    WS --> HB[src/boards/ws63/hoperun + 固定运行包：润和固件]
     Win --> Sim[润和 Windows 模拟器 EXE：主机网络与虚拟设备]
     Web[共用 src/application/ui/web 手机配网页面] --> ESP
     Web --> WS

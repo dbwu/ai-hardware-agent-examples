@@ -31,7 +31,7 @@ UI 控件由单任务管理，输入/云回调经邮箱交给应用 owner。配�
 
 ## 外部依赖和配置
 
-需要完整的 ai-hardware-agent-examples 仓库中的 GoldieOS 润和 BSP、预编译板级库、上级 cmake 脚本、交叉工具链及固件链接/签名/打包工具。本次使用同级目录 ../ai-hardware-agent-examples/examples/goldieos；通过 GOLDIEOS_ROOT 可修改路径，但须保留其上级仓库结构。WS63 固件不能仅靠 unified-app 和 SDK 库独立构建；ESP32 构建不依赖该外部仓库。
+运行依赖随工程 third_party/goldieos/runtime.tar.gz 提供，CMake 校验后解压到构建目录。平台 CMake 已内置，不再依赖外部示例仓库。另行准备 CMake/Ninja、RISC-V 编译器和厂商链接/签名工具；见 [依赖说明](../../../third_party/goldieos/README.md)。
 
 1. 复制 `config/ws63.local.h.example` 为 `config/ws63.local.h`。
 2. 填写 `WS_AI_AGENT_ID` 及 `WS_AI_API_KEY`，或完整的 PRODUCT_ID/KEY/SECRET。API Key 优先。
@@ -49,11 +49,11 @@ LVGL 源码归档随仓库提供，CMake 校验 SHA-256 后在构建目录解压
 当前已验证环境为 Windows、CMake 4.0.3、Ninja、BSP 的 RISC-V GCC 7.3。以下在 unified-app 根目录运行；请将工具链路径替换为实际绝对路径：
 
 ```sh
-cmake -S src/platforms/goldieos/targets/ws63 -B build-hoperun-app -G Ninja -DCMAKE_TOOLCHAIN_FILE=D:/Code/ai-app-arch/ai-hardware-agent-examples/cmake/toolchains/ws63-riscv-gcc.cmake -DCMAKE_BUILD_TYPE=Release
+cmake -S src/platforms/goldieos/targets/ws63 -B build-hoperun-app -G Ninja -DCMAKE_TOOLCHAIN_FILE=src/platforms/goldieos/cmake/toolchains/ws63-riscv-gcc.cmake -DGOLDIEOS_TOOLS_ROOT=<工具包根> -DCMAKE_BUILD_TYPE=Release
 cmake --build build-hoperun-app -j6
 ```
 
-非默认 BSP 位置增加 `-DGOLDIEOS_ROOT=<完整仓库>/examples/goldieos`。可通过 WS63_LOCAL_CONFIG 指定私有配置文件，通过 CONVAI_SDK_ROOT 指定同版本 SDK 目录。
+`GOLDIEOS_ROOT` 由运行归档解压过程管理；工具包位置使用 `-DGOLDIEOS_TOOLS_ROOT=<工具包根>`。可通过 WS63_LOCAL_CONFIG 指定私有配置文件，通过 CONVAI_SDK_ROOT 指定同版本 SDK 目录。
 
 - build-hoperun-app/out/unified_ai_hoperun.fwpkg：厂商打包固件，供匹配该润和板的 BurnTool 流程使用。
 - build-hoperun-app/out/unified_ai_hoperun.bin：应用二进制，不应自行推测裸烧地址。

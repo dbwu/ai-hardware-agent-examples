@@ -92,7 +92,8 @@ function Build-Idf {
     $idf = Join-Path $IdfRoot 'tools/idf.py'
     # Absolute project directory avoids dependence on caller working directory.
     Invoke-BuildCommand $script:idfPython @($idf,'-C',$RepoRoot,'-B',$BuildRoot,
-        "-DUNIFIED_BOARD=$Target","-DCONVAI_SDK_ROOT=$SdkRoot",'build') (Join-Path $BuildRoot 'build.log')
+        "-DUNIFIED_BOARD=$Target","-DCONVAI_SDK_ROOT=$SdkRoot",'reconfigure') (Join-Path $BuildRoot 'configure.log')
+    Invoke-BuildCommand $cmake @('--build',$BuildRoot,'--parallel',"$Jobs") (Join-Path $BuildRoot 'build.log')
     Push-Location $BuildRoot
     try {
         Invoke-BuildCommand $script:idfPython @('-m','esptool','--chip','esp32s3','merge-bin',

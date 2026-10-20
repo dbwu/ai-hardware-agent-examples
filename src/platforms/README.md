@@ -14,7 +14,7 @@
 | 构建适配 | esp_idf/cmake/components | goldieos/cmake、各组件的 component.cmake |
 | 构建入口 | esp_idf/targets/esp32s3；根目录兼容分发 | goldieos/targets/{ws63,windows} |
 
-components 表示职责模块，不要求各平台使用同一种构建系统。ESP-IDF 的 esp_services 聚合已拆为 esp_media、esp_network、esp_config、esp_sdk；main、ai_*、esp-wifi-connect 保留。各组件公开头文件位于自身 include，SDK 内部头不再向云配置模块暴露。GoldieOS 接口也分组件，由 common.cmake 对直接使用者设置源码级 include，应用事件入口仍位于 goldieos/include。BSP 原有单目标及第三方头文件范围暂时保留。
+components 表示职责模块，不要求各平台使用同一种构建系统。ESP-IDF 的 esp_services 聚合已拆为 esp_media、esp_network、esp_config、esp_sdk；main、ai_*、esp-wifi-connect 保留。各组件公开头文件位于自身 include，SDK 内部头不再向云配置模块暴露。GoldieOS 接口也分组件，由 common.cmake 对直接使用者设置源码级 include，应用事件入口仍位于 goldieos/include。运行包原有单目标及第三方头文件范围暂时保留。
 
 GoldieOS 每个组件拥有 component.cmake，common.cmake 只组装公共应用、服务、板级源文件并调用组件。network、runtime、convai 在构建时选择 ws63/windows 后端；Windows 网络状态已从 runtime 中分离。UI 共用 src/application/ui/ai_lvgl.c 和 web 资源；平台 UI 只负责运行与设备接入。
 

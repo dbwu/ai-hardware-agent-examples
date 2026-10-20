@@ -34,7 +34,7 @@ WS63_BOARD=hoperun 选择 src/boards/ws63/hoperun/board.cmake；替换兼容 BSP
 | SDK 库 | SDK 26.8.0 的 libs/ws63/libconvai_sdk.a | 同版 libs/esp32s3/libconvai_sdk.a，两板共用 |
 | SDK HAL | goldie 线程/信号量、lwIP socket、mbedTLS、NTP | FreeRTOS、ESP 网络/TLS 接口、SNTP |
 | 时间与 TLS | NTP 同步，SDK CA 或私有配置 PEM；缺少 CA 拒绝连接 | SNTP，同步后连接；SDK CA 或 ESP 证书包 |
-| 构建组织 | 引用外部润和 BSP 和预编译板级库，CMake/Ninja | IDF 工程，组件 manifest 与 lock 文件管理依赖 |
+| 构建组织 | 使用工程内固定 GoldieOS 运行归档和预编译板级库，CMake/Ninja | IDF 工程，组件 manifest 与 lock 文件管理依赖 |
 | 固件生产 | 该 BSP 的 Windows 链接/签名/打包工具生成 fwpkg，配合 BurnTool | idf.py/esptool，按 bootloader、分区表、应用偏移烧录 |
 | 本项目配置 | config/ws63.local.h | 各自 build 目录的 sdkconfig/menuconfig |
 
@@ -84,11 +84,11 @@ WS63_BOARD=hoperun 选择 src/boards/ws63/hoperun/board.cmake；替换兼容 BSP
 | 触摸采样与显示刷新 | src/platforms/esp_idf/components/ui/ai_ui.c 与 src/platforms/goldieos/components/ui/ui.c | 当前 Hoperun 板级适配分块同步写屏，ESP 等待 DMA 回调 |
 | OS、网络、TLS、采集/播放任务 | src/platforms/esp_idf/ 与 src/platforms/goldieos/targets/ws63/ | 接口语义一致，平台实现分开 |
 | ESP 板型引脚、屏幕、Codec 时序 | src/boards/esp32/szpi/、src/boards/esp32/lrd/、src/boards/esp32/common/esp32s3/ | 同平台两板按实际硬件共用 |
-| WS63 板级驱动和预编译系统库 | 外部 GoldieOS BSP，通过 GOLDIEOS_ROOT 引入 | 保留厂商实现；需单独管理依赖版本 |
+| WS63 板级驱动和预编译系统库 | 工程内 GoldieOS 归档，构建时解压 | 保留厂商实现；需单独管理依赖版本 |
 
 增加 ESP32-S3 伙伴板时优先扩展 boards 与配置；增加另一块兼容 WS63 板时在 boards 下提供 BSP/AudioService/显示和电源接口适配；增加其他芯片平台时实现相同的云媒体接口与事件投递约束。不要在 src/application/core/cloud 中加入厂商条件分支。
 
-实现与构建入口见 [WS63 独立应用说明](../src/platforms/goldieos/README.md)，[组装代码](../src/platforms/goldieos/entry/app.c)，[媒体适配](../src/platforms/goldieos/components/media/media.c)，[公共页面设计](../src/application/ui/include/ai_screen.h)。外部 BSP 的核对入口为 examples/goldieos/cmake/goldieos-ws63.cmake、drivers/codec、drivers/touch、drivers/extern_io、include/core/audio_service.h 及原 sdk_integration/convai_audio_uplink.c。
+实现与构建入口见 [WS63 独立应用说明](../src/platforms/goldieos/README.md)，[组装代码](../src/platforms/goldieos/entry/app.c)，[媒体适配](../src/platforms/goldieos/components/media/media.c)，[公共页面设计](../src/application/ui/include/ai_screen.h)。当前运行依赖范围和逐文件校验见 [依赖说明](../third_party/goldieos/README.md)；构建脚本位于 src/platforms/goldieos/cmake，厂商驱动/服务头由固定归档提供。
 
 ### A5. Hoperun 实板与 Windows 模拟器
 

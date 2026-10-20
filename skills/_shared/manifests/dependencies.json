@@ -24,14 +24,15 @@
     "sha256": "76ca0bf0e4ebbd352f9eb66c679746101165b0e1e343c8cbbd8ddde1636b1d7a",
     "relative_root": "."
   },
-  "bsp": {
-    "version": null,
-    "url": null,
-    "sha256": null,
-    "relative_root": "."
-  },
   "esp_idf": {
     "version": "v6.1",
     "repository": "https://github.com/espressif/esp-idf.git"
+  },
+  "ws63_tools": {
+    "version": "hoperun-local-2026-10-20",
+    "local_path": "goldieos-ws63-tools.tar.gz",
+    "url": null,
+    "sha256": "5c841c0bac8b8ac89b589c5b4583fdd251cb17613877e800430a747493104dac",
+    "relative_root": "."
   }
 }
